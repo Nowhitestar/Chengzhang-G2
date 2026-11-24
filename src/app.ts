@@ -20,7 +20,7 @@ import { makeT, type T } from "../shared/i18n.ts";
 import { hostOf, markIds, markInner, snippet, toGlassesText } from "../shared/text.ts";
 import type { Annotation, ArticleView, HomeRow, HomeView, Lang, LibraryRow, RecordingPurpose } from "../shared/types.ts";
 import { Api, ApiError, type Storage } from "./api.ts";
-import { Recorder } from "./audio.ts";
+import { DemoMic, Recorder } from "./audio.ts";
 import { Display, type Page } from "./glasses/display.ts";
 import { Ink } from "./glasses/ink.ts";
 import { readInput, type Input } from "./glasses/input.ts";
@@ -70,6 +70,8 @@ interface Talk {
   /** Where to go if the take is thrown away. */
   back: () => void;
   then: "brief" | "review";
+  /** Started by pressing and holding: letting go ends it. */
+  held: boolean;
 }
 
 /** The clock is refreshed every tick; a stroke of ink is added every second tick. */
@@ -93,6 +95,8 @@ export class App {
   private talk: Talk | null = null;
   private poll: number | null = null;
   private readonly display: Display;
+  /** Set with ?mic=demo: speech-shaped noise instead of the real microphone. */
+  private readonly demoMic = new URLSearchParams(location.search).get("mic") === "demo" ? new DemoMic() : null;
   private t: T;
   private readonly listeners = new Set<() => void>();
 
@@ -231,9 +235,27 @@ export class App {
     });
   }
 
-  /** Called from the phone page after the access code was entered. */
+  /** From the phone page: try again after a problem. */
   retry(): void {
     void this.start();
+  }
+
+  /** From the phone page: the access code was typed in. Rejects when the backend does not accept it. */
+  async enterCode(code: string): Promise<void> {
+    await this.api.open(code);
+    await this.start();
+  }
+
+  /** From the phone page: open an article on the glasses as well. */
+  openFromPhone(id: string): void {
+    if (this.talk) return; // not while recording
+    void this.attempt(() => this.open(id));
+  }
+
+  /** From the phone page: the article was sent to Notion. */
+  published(id: string, url: string): void {
+    const s = this.screen;
+    if ("article" in s && s.article.id === id) this.update({ ...s, article: { ...s.article, publishedUrl: url } } as Screen);
   }
 
   /**
@@ -272,8 +294,16 @@ export class App {
       void this.leave();
       return;
     }
-    if (input.type === "covered" || input.type === "uncovered" || input.type === "hold" || input.type === "release") return;
+    if (input.type === "covered" || input.type === "uncovered") return;
+    if (input.type === "release") {
+      if (this.talk?.held) void this.doneTalking();
+      return;
+    }
     if (this.busy) return;
+    if (input.type === "hold") {
+      this.holdToTalk();
+      return;
+    }
     const s = this.screen;
     switch (s.name) {
       case "boot":
@@ -317,6 +347,31 @@ export class App {
     }
   }
 
+  /**
+   * Press and hold on a finished article to say a change; let go when done.
+   * On one of the AI's questions, the same gesture answers it. It is a shortcut:
+   * everything it does is also in the list on screen.
+   */
+  private holdToTalk(): void {
+    const s = this.screen;
+    if (this.talk || !("article" in s) || s.article.status !== "ready" || s.article.revising) return;
+    const a = s.article;
+    const note = s.name === "review" ? a.annotations.find((n) => n.id === s.id) : undefined;
+    if (note?.kind === "ask") {
+      void this.startTalking({
+        purpose: "answer",
+        articleId: a.id,
+        target: note.id,
+        question: note.note,
+        back: () => this.go({ name: "review", article: a, id: note.id }),
+        then: "review",
+        held: true,
+      });
+    } else if (s.name === "brief" || s.name === "changed" || (s.name === "reader" && s.source === "article")) {
+      void this.startTalking({ purpose: "instruction", articleId: a.id, back: () => this.showBrief(a), then: "brief", held: true });
+    }
+  }
+
   private async choose(index: number): Promise<void> {
     const entry = this.entries[index];
     if (!entry) return;
@@ -346,7 +401,7 @@ export class App {
     if (!talk) return;
     this.talk = null;
     window.clearInterval(talk.timer);
-    void this.bridge.audioControl(false);
+    void this.microphone(false);
     try {
       const { slices, durationMs } = await talk.recorder.finish();
       await this.api.finishRecording(await talk.recording, slices, durationMs);
@@ -426,6 +481,7 @@ export class App {
     question?: string;
     back: () => void;
     then?: "brief" | "review";
+    held?: boolean;
   }): Promise<void> {
     if (this.talk) return;
     const articleReady = o.articleId ? Promise.resolve(o.articleId) : this.api.createArticle();
@@ -453,6 +509,7 @@ export class App {
       startedAt: Date.now(),
       back: o.back,
       then: o.then ?? "brief",
+      held: o.held ?? false,
     };
     this.talk = talk;
     this.go({ name: "listening", purpose: o.purpose, question: o.question ?? "", confirm: false });
@@ -482,14 +539,23 @@ export class App {
     }, TICK_MS);
 
     try {
-      const ok = await this.bridge.audioControl(true, AudioInputSource.Glasses);
-      if (!ok) throw new Error("audioControl returned false");
+      await this.microphone(true);
       await recording;
     } catch (err) {
       if (this.talk !== talk) return;
       this.dropTalk();
       this.fail(err instanceof ApiError ? err : new ApiError("mic", 0, "other"));
     }
+  }
+
+  private async microphone(on: boolean): Promise<void> {
+    if (this.demoMic) {
+      if (on) this.demoMic.start((pcm) => this.talk?.recorder.push(pcm));
+      else this.demoMic.stop();
+      return;
+    }
+    const ok = on ? await this.bridge.audioControl(true, AudioInputSource.Glasses) : await this.bridge.audioControl(false);
+    if (on && !ok) throw new Error("the microphone did not open");
   }
 
   /** Stop the microphone and forget the take, without telling the backend anything yet. */
@@ -499,7 +565,7 @@ export class App {
     this.talk = null;
     window.clearInterval(talk.timer);
     talk.recorder.cancel();
-    void this.bridge.audioControl(false);
+    void this.microphone(false);
     void this.storage.set(TAKE_KEY, "");
     void talk.recording.then((id) => this.api.discardRecording(id)).catch(() => {});
     return talk;
@@ -523,7 +589,7 @@ export class App {
     }
     this.busy = true;
     window.clearInterval(talk.timer);
-    void this.bridge.audioControl(false);
+    void this.microphone(false);
     this.go({ name: "saving" });
     try {
       const { slices, durationMs } = await talk.recorder.finish();
@@ -714,12 +780,17 @@ export class App {
             entries,
           };
         }
+        const held = talk?.held;
         const foot =
           s.purpose === "material"
             ? t("停顿、重复都没关系。讲完点一下。", "Pauses are fine. Tap when done.")
             : s.purpose === "instruction"
-              ? t("说一句要怎么改。说完点一下。", "Say what to change. Tap when done.")
-              : t("直接回答。说完点一下。", "Answer out loud. Tap when done.");
+              ? held
+                ? t("说一句要怎么改。说完松手。", "Say what to change. Let go when done.")
+                : t("说一句要怎么改。说完点一下。", "Say what to change. Tap when done.")
+              : held
+                ? t("直接回答。说完松手。", "Answer out loud. Let go when done.")
+                : t("直接回答。说完点一下。", "Answer out loud. Tap when done.");
         return { page: layout.listening({ clock: time, ink: talk?.ink.text ?? "", foot, question: s.question || undefined }) };
       }
 
@@ -782,7 +853,7 @@ export class App {
         if (open) entries.push({ label: t(`逐条定夺（${open}）`, open === 1 ? "Go through 1 note" : `Go through ${open} notes`), run: () => this.review(a) });
         entries.push({ label: t("读全文", "Read it"), run: () => this.read(a, "article") });
         entries.push({
-          label: t("说一句，改一下", "Say a change"),
+          label: t("说一句，改一下（也可以按住说）", "Say a change (or press and hold)"),
           run: () => this.startTalking({ purpose: "instruction", articleId: a.id, back: () => this.showBrief(a), then: "brief" }),
         });
         if (this.api.features.notion) {

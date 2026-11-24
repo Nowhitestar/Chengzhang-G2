@@ -151,3 +151,33 @@ export class Recorder {
     this.unsent.clear();
   }
 }
+
+/**
+ * A pretend microphone, switched on with ?mic=demo in the address. It makes
+ * speech-shaped noise (bursts of sound with pauses) so the app can be shown,
+ * and tested end to end, on a machine with no microphone. Used together with
+ * the backend's demo mode, where the words come from a canned script anyway.
+ */
+export class DemoMic {
+  private timer: number | null = null;
+
+  start(onFrame: (pcm: Uint8Array) => void): void {
+    let n = 0;
+    this.timer = window.setInterval(() => {
+      // 100 ms frames. A "sentence" of about 2.5 s, then a short breath; syllables rise and fall inside it.
+      const t = n++ / 10;
+      const speaking = t % 3.2 < 2.5;
+      const syllable = 0.35 + 0.65 * Math.abs(Math.sin(t * 5.1)) * (0.6 + 0.4 * Math.sin(t * 1.3) ** 2);
+      const amplitude = speaking ? 5200 * syllable : 12;
+      const frame = new Uint8Array(3200);
+      const view = new DataView(frame.buffer);
+      for (let i = 0; i < 1600; i++) view.setInt16(i * 2, Math.round((Math.random() * 2 - 1) * amplitude), true);
+      onFrame(frame);
+    }, 100);
+  }
+
+  stop(): void {
+    if (this.timer !== null) window.clearInterval(this.timer);
+    this.timer = null;
+  }
+}

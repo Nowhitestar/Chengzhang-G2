@@ -32,10 +32,10 @@ export async function mockTranscribe(pcm: Uint8Array, hint: { purpose: Recording
   await sleep(Math.min(DELAY, 600));
   if (hint.purpose === "instruction") return "Make the opening more direct.";
   if (hint.purpose === "answer") return "Um, about six months.";
-  // Roughly three seconds of audio per sentence, continuing where the previous slice stopped.
-  const perSlice = Math.max(1, Math.round(pcmMs(pcm) / 3000));
-  const start = (hint.idx * perSlice) % SCRIPT.length;
-  return SCRIPT.slice(start, start + perSlice).join(" ");
+  // The script is "spoken" briskly, so a ten-second demo take contains all of it.
+  // A second slice carries on where the first stopped; past the end there is nothing more to say.
+  const perSlice = Math.max(1, Math.ceil(pcmMs(pcm) / 800));
+  return SCRIPT.slice(hint.idx * perSlice, (hint.idx + 1) * perSlice).join(" ");
 }
 
 const SOURCE = { title: "Time management: The Eisenhower Method (Wikipedia)", url: "https://en.wikipedia.org/wiki/Time_management" };
@@ -130,16 +130,19 @@ export async function mockClaude(opts: CallOptions): Promise<LlmResult> {
   switch (opts.step) {
     case "tidy":
       return { text: tidy(between(opts.user, "transcript")), sources: [] };
-    case "research":
+    case "research": {
+      // Keyed the same way as the canned article below, so the two always agree.
+      const canned = /to-do list/i.test(opts.user);
       return {
-        text: /Eisenhower/i.test(opts.user)
+        text: canned
           ? [
               `DIFFERS: Eisenhower invented the matrix in 1954 | He described the idea in a 1954 speech; the matrix was devised later | ${SOURCE.url}`,
               `USEFUL: The matrix was popularised by Stephen Covey's The 7 Habits of Highly Effective People (1989) | ${SOURCE.url}`,
             ].join("\n")
           : "Nothing in the material needs checking.",
-        sources: /Eisenhower/i.test(opts.user) ? [SOURCE] : [],
+        sources: canned ? [SOURCE] : [],
       };
+    }
     case "write":
       return { text: JSON.stringify(draft(between(opts.user, "material"))), sources: [] };
     case "edit":

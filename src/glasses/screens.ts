@@ -67,9 +67,10 @@ export function brief(o: { head: string; title: string; gist: string; items: str
   };
 }
 
-/** The opening page when there is something to tell: a line of greeting and the list. */
+/** The opening page when there is something to tell: a line of greeting, then the list right under it. */
 export function menu(o: { head: string; items: string[] }): Page {
-  return { boxes: [head(o.head), list(o.items, 6)] };
+  const rows = Math.min(6, o.items.length);
+  return { boxes: [head(o.head), { kind: "list", name: "list", x: 0, y: HEIGHT - 6 * ROW, w: WIDTH, h: rows * ROW, items: o.items.map(item) }] };
 }
 
 /** A few words in the middle of an otherwise empty screen. Taps go to the main text. */

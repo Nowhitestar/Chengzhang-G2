@@ -8,7 +8,7 @@
     "dev": "concurrently -k -n server,app -c gray,green \"npm:dev:server\" \"npm:dev:app\"",
     "dev:server": "tsx watch --env-file-if-exists=.env server/index.ts",
     "dev:app": "vite",
-    "sim": "evenhub-simulator http://localhost:5173",
+    "sim": "node node_modules/@evenrealities/evenhub-simulator/bin/index.js http://localhost:5173",
     "build": "tsc --noEmit && vite build",
     "start": "tsx --env-file-if-exists=.env server/index.ts",
     "typecheck": "tsc --noEmit",
