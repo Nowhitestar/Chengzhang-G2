@@ -15,7 +15,7 @@
 import { z } from "zod";
 
 /** Bump when a prompt changes in substance; it is logged with every article. */
-export const PROMPT_VERSION = "g2-2026-11-24.1";
+export const PROMPT_VERSION = "g2-2026-11-24.2";
 
 export const TIDY_SYSTEM = `You are tidying the transcript of a writer thinking out loud. The tidied text is raw material for an article that will be written later, so this step only cleans. It does not write.
 
@@ -89,7 +89,7 @@ Rules for marks: ids are a1, a2, a3 and so on, each used once; marks never overl
 
 Return JSON:
 - "title": specific and plain. No clickbait.
-- "gist": what the article says, in one or two sentences, at most 160 characters, in the article's language. It is shown on a tiny display before the author reads anything, so state the actual point, not a teaser.
+- "gist": what the article says, in one or two sentences, in the article's language: at most 140 characters, or 70 if it is written in Chinese, Japanese or Korean. It is shown on a tiny display before the author reads anything, so state the actual point, not a teaser.
 - "markdown": the article body in Markdown.
 - "annotations": the notes described above. Leave string fields that do not apply empty.`;
 
