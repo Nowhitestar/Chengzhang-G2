@@ -112,8 +112,9 @@ test("silence is not turned into words, and an empty take is thrown away", async
   await c.call("POST", `/api/recordings/${rec}/finish`, { chunks: 1, durationMs: 1000 });
   await new Promise((r) => setTimeout(r, 50));
   const a = await c.article(id);
-  assert.equal(a.recordings.length, 0, "a recording with nothing in it is not material");
-  assert.equal((await c.call("POST", `/api/articles/${id}/compose`)).status, 409);
+  assert.deepEqual(a.recordings.map((r) => [r.status, r.error]), [["failed", "I didn’t hear anything."]], "the author is told, not left guessing");
+  assert.equal((await c.call("POST", `/api/articles/${id}/compose`)).status, 409, "and it is not material to write from");
+  assert.deepEqual((await c.call("GET", "/api/home")).data.rows, [], "nor does it put the article on the opening page");
 
   const rec2 = (await c.call<{ id: string }>("POST", `/api/articles/${id}/recordings`, {})).data.id;
   const done = await c.call("POST", `/api/recordings/${rec2}/finish`, { chunks: 0 });

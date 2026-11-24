@@ -58,7 +58,7 @@ export interface ArticleView {
   /** Markdown; AI notes are wrapped as <mark data-id="a1">…</mark>. */
   markdown: string;
   annotations: Annotation[];
-  /** Material recordings only, oldest first. */
+  /** What was said for this article, oldest first. A recording that could not be transcribed is listed as failed. */
   recordings: RecordingView[];
   words: number;
   /** Why composing failed, in the user's language. */

@@ -93,7 +93,7 @@ export function createApp(): Hono<Env> {
   app.delete("/api/articles/:id", (c) => {
     const a = article(c);
     if (!a) return notFound(c);
-    for (const r of store.materialOf(a.id)) pipeline.discardRecording(r);
+    for (const r of store.takesOf(a.id)) pipeline.discardRecording(r);
     store.deleteArticle(a.user_id, a.id);
     return c.json({ ok: true });
   });

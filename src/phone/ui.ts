@@ -157,7 +157,7 @@ export function mountPhone(app: App, storage: Storage): void {
         now = `<h1 class="display">${t("在保存…", "Saving…")}</h1>`;
         break;
       case "notes": {
-        const n = s.article.recordings.length;
+        const n = s.article.recordings.filter((r) => r.status !== "failed").length;
         now = `<div class="label">${t("素材", "What you said")}</div>
           <h1 class="display">${t(`讲了 ${n} 段`, `${n} ${n === 1 ? "recording" : "recordings"}`)}</h1>
           <p>${t("在眼镜上选「写成文章」，或者接着讲。", "On the glasses, choose “Write it up”, or keep talking.")}</p>`;

@@ -116,7 +116,7 @@ export function articleView(a: ArticleRow): ArticleView {
     gist: a.gist,
     markdown: a.markdown,
     annotations: parseAnnotations(a.annotations),
-    recordings: materialOf(a.id).map(recordingView),
+    recordings: takesOf(a.id).map(recordingView),
     words: a.markdown ? wordCount(a.markdown) : 0,
     error: a.error,
     revising: Boolean(a.revising),
@@ -241,10 +241,18 @@ export function deleteRecording(id: string): void {
   run("DELETE FROM recordings WHERE id = ?", id);
 }
 
-/** What the author said for this article, oldest first. Discarded and failed takes are left out. */
+/** What the author said for this article, oldest first: recordings that are transcribed or on their way. */
 export function materialOf(articleId: string): RecordingRow[] {
   return all<RecordingRow>(
     "SELECT * FROM recordings WHERE article_id = ? AND purpose = 'material' AND status IN ('processing', 'ready') ORDER BY created_at",
+    articleId,
+  );
+}
+
+/** The same, plus recordings that could not be transcribed, so the author can be told. */
+export function takesOf(articleId: string): RecordingRow[] {
+  return all<RecordingRow>(
+    "SELECT * FROM recordings WHERE article_id = ? AND purpose = 'material' AND status IN ('processing', 'ready', 'failed') ORDER BY created_at",
     articleId,
   );
 }

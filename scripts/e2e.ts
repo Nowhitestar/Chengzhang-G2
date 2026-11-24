@@ -95,14 +95,13 @@ async function screen(name: string, timeoutMs = 30_000): Promise<void> {
   throw new Error(`timed out waiting for the "${name}" screen`);
 }
 
-let shots = 0;
+/** Save what the glasses show (on black, as they look) and what the phone page shows. */
 async function shot(name: string): Promise<void> {
-  const n = String(++shots).padStart(2, "0");
   const glasses = Buffer.from(await (await fetch(`${SIM}/api/screenshot/glasses`)).arrayBuffer());
-  writeFileSync(join(OUT, `${n}-${name}.png`), onBlack(glasses));
+  writeFileSync(join(OUT, `${name}.png`), onBlack(glasses));
   const phone = await fetch(`${SIM}/api/screenshot/webview`);
-  if (phone.ok) writeFileSync(join(OUT, `${n}-${name}-phone.png`), Buffer.from(await phone.arrayBuffer()));
-  console.log(`  ${n} ${name}`);
+  if (phone.ok) writeFileSync(join(OUT, `${name}-phone.png`), Buffer.from(await phone.arrayBuffer()));
+  console.log(`  ${name}`);
 }
 
 const tap = () => input("click");
@@ -124,6 +123,18 @@ async function walk(): Promise<void> {
   await screen("notes");
   await sleep(3500); // the recording is being tidied
   await shot("what-you-said");
+
+  console.log("keep talking, then think better of it");
+  await down();
+  await tap();
+  await screen("listening");
+  await sleep(1500);
+  await back(); // asks before throwing anything away; it keeps recording meanwhile
+  await sleep(900);
+  await shot("throw-it-away");
+  await down();
+  await tap();
+  await screen("notes");
 
   console.log("write it up");
   await tap();

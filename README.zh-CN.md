@@ -8,8 +8,8 @@
 
 | 眼镜上 | 手机上 |
 |---|---|
-| <img src="docs/screens/zh/02-talking.png" width="380" alt="讲的时候眼镜上只有时间和墨痕，不出字"> | <img src="docs/screens/zh/05-ready-phone.png" width="250" alt="手机上排好版的文章，AI 补充的句子是亮色"> |
-| <img src="docs/screens/zh/05-ready.png" width="380" alt="写好的文章：标题、一句话说它讲了什么、有三处等你定"> | |
+| <img src="docs/screens/zh/talking.png" width="380" alt="讲的时候眼镜上只有时间和墨痕，不出字"> | <img src="docs/screens/zh/ready-phone.png" width="250" alt="手机上排好版的文章，AI 补充的句子是亮色"> |
+| <img src="docs/screens/zh/ready.png" width="380" alt="写好的文章：标题、一句话说它讲了什么、有三处等你定"> | |
 
 ## 它用在什么时候
 
@@ -31,11 +31,11 @@
 
 | | |
 |---|---|
-| <img src="docs/screens/zh/01-home.png" width="300"><br>**打开。** 一张空白页，一件可以做的事。 | <img src="docs/screens/zh/02-talking.png" width="300"><br>**讲。** 屏幕上不出字，只有墨痕，没有可以回头改的东西。 |
-| <img src="docs/screens/zh/03-what-you-said.png" width="300"><br>**素材。** 去掉了口头语。想好了就「写成文章」，或者接着讲。 | <img src="docs/screens/zh/04-writing.png" width="300"><br>**正在写。** 要一两分钟，可以先离开。 |
-| <img src="docs/screens/zh/05-ready.png" width="300"><br>**写好了。** 一眼看到文章讲了什么。 | <img src="docs/screens/zh/06-note-check.png" width="300"><br>**和资料有出入。** 你不点头，原话不动。 |
-| <img src="docs/screens/zh/07-note-added.png" width="300"><br>**AI 补充。** 一定带来源，留不留你说了算。 | <img src="docs/screens/zh/08-note-question.png" width="300"><br>**想问你一句。** 用语音回答。 |
-| <img src="docs/screens/zh/12-reading.png" width="300"><br>**读全文**，一页一页翻。 | <img src="docs/screens/zh/14-changed.png" width="300"><br>**说一句，改一下。** 看得到听到了什么、改了什么，可以撤销。 |
+| <img src="docs/screens/zh/home.png" width="300"><br>**打开。** 一张空白页，一件可以做的事。 | <img src="docs/screens/zh/talking.png" width="300"><br>**讲。** 屏幕上不出字，只有墨痕，没有可以回头改的东西。 |
+| <img src="docs/screens/zh/what-you-said.png" width="300"><br>**素材。** 去掉了口头语。想好了就「写成文章」，或者接着讲。 | <img src="docs/screens/zh/writing.png" width="300"><br>**正在写。** 要一两分钟，可以先离开。 |
+| <img src="docs/screens/zh/ready.png" width="300"><br>**写好了。** 一眼看到文章讲了什么。 | <img src="docs/screens/zh/note-check.png" width="300"><br>**和资料有出入。** 你不点头，原话不动。 |
+| <img src="docs/screens/zh/note-added.png" width="300"><br>**AI 补充。** 一定带来源，留不留你说了算。 | <img src="docs/screens/zh/note-question.png" width="300"><br>**想问你一句。** 用语音回答。 |
+| <img src="docs/screens/zh/reading.png" width="300"><br>**读全文**，一页一页翻。 | <img src="docs/screens/zh/changed.png" width="300"><br>**说一句，改一下。** 看得到听到了什么、改了什么，可以撤销。 |
 
 两种语言的全部画面在 [docs/screens](docs/screens)，是 `npm run e2e` 在模拟器里走出来的，不是画的。（演示模式的示例内容是英文的；接上真实模型后，你讲什么语言，文章就是什么语言。）
 

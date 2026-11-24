@@ -8,8 +8,8 @@
 
 | On the glasses | On the phone |
 |---|---|
-| <img src="docs/screens/en/02-talking.png" width="380" alt="While you talk the glasses show a clock and strokes of ink, no words"> | <img src="docs/screens/en/05-ready-phone.png" width="250" alt="The finished article on the phone, with the AI's addition highlighted"> |
-| <img src="docs/screens/en/05-ready.png" width="380" alt="The finished article at a glance: title, what it says, and three notes waiting"> | |
+| <img src="docs/screens/en/talking.png" width="380" alt="While you talk the glasses show a clock and strokes of ink, no words"> | <img src="docs/screens/en/ready-phone.png" width="250" alt="The finished article on the phone, with the AI's addition highlighted"> |
+| <img src="docs/screens/en/ready.png" width="380" alt="The finished article at a glance: title, what it says, and three notes waiting"> | |
 
 ## The moment it is for
 
@@ -31,11 +31,11 @@ The article is waiting on the phone, typeset, ready to copy as Markdown or send 
 
 | | |
 |---|---|
-| <img src="docs/screens/en/01-home.png" width="300"><br>**Open.** A blank page and one thing to do. | <img src="docs/screens/en/02-talking.png" width="300"><br>**Talk.** No words appear, only ink, so there is nothing to go back and fix. |
-| <img src="docs/screens/en/03-what-you-said.png" width="300"><br>**What you said**, cleaned of filler. Write it up when you are ready, or keep talking. | <img src="docs/screens/en/04-writing.png" width="300"><br>**Writing** takes a minute or two. You can leave. |
-| <img src="docs/screens/en/05-ready.png" width="300"><br>**Ready.** The point of the article in one glance. | <img src="docs/screens/en/06-note-check.png" width="300"><br>**Check this.** Your words stay unless you say otherwise. |
-| <img src="docs/screens/en/07-note-added.png" width="300"><br>**AI added.** Always with a source; yours to keep or remove. | <img src="docs/screens/en/08-note-question.png" width="300"><br>**A question for you.** Answer out loud. |
-| <img src="docs/screens/en/12-reading.png" width="300"><br>**Read it**, a page at a time. | <img src="docs/screens/en/14-changed.png" width="300"><br>**Say a change.** You see what was heard and what was done, and can undo it. |
+| <img src="docs/screens/en/home.png" width="300"><br>**Open.** A blank page and one thing to do. | <img src="docs/screens/en/talking.png" width="300"><br>**Talk.** No words appear, only ink, so there is nothing to go back and fix. |
+| <img src="docs/screens/en/what-you-said.png" width="300"><br>**What you said**, cleaned of filler. Write it up when you are ready, or keep talking. | <img src="docs/screens/en/writing.png" width="300"><br>**Writing** takes a minute or two. You can leave. |
+| <img src="docs/screens/en/ready.png" width="300"><br>**Ready.** The point of the article in one glance. | <img src="docs/screens/en/note-check.png" width="300"><br>**Check this.** Your words stay unless you say otherwise. |
+| <img src="docs/screens/en/note-added.png" width="300"><br>**AI added.** Always with a source; yours to keep or remove. | <img src="docs/screens/en/note-question.png" width="300"><br>**A question for you.** Answer out loud. |
+| <img src="docs/screens/en/reading.png" width="300"><br>**Read it**, a page at a time. | <img src="docs/screens/en/changed.png" width="300"><br>**Say a change.** You see what was heard and what was done, and can undo it. |
 
 Every screen in both languages is in [docs/screens](docs/screens); they are produced by `npm run e2e`, not drawn by hand.
 

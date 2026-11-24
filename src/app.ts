@@ -192,6 +192,11 @@ export class App {
     }
   }
 
+  /** For work started from inside another action: failures still end on a clear screen. */
+  private safely(work: Promise<void>): void {
+    work.catch((err) => this.fail(err));
+  }
+
   private fail(err: unknown): void {
     const t = this.t;
     if (err instanceof ApiError && err.code === "network") {
@@ -221,6 +226,7 @@ export class App {
     await this.attempt(async () => {
       await this.api.open();
       await this.salvage();
+      await this.api.home(); // also tells us what this backend offers (Notion, demo mode)
       const resume = await this.storage.get(RESUME_KEY);
       if (resume) {
         try {
@@ -328,7 +334,7 @@ export class App {
         if (input.type === "double") void this.bridge.shutDownPageContainer(1);
         else if (input.type === "tap") {
           if (this.entries.length) void this.choose(input.index);
-          else void this.startTalking({ purpose: "material", back: () => void this.home() });
+          else void this.startTalking({ purpose: "material", back: () => this.safely(this.home()) });
         }
         return;
       case "listening":
@@ -471,7 +477,7 @@ export class App {
       if (a.revising) this.showRevising(a, "brief");
       else this.showBrief(a);
     } else if (a.recordings.length) this.showNotes(a);
-    else void this.home();
+    else this.safely(this.home());
   }
 
   private async library(): Promise<void> {
@@ -760,7 +766,7 @@ export class App {
           };
         }
         const entries: Entry[] = [
-          { label: t("● 讲一篇新的", "● Start a new one"), run: () => this.startTalking({ purpose: "material", back: () => void this.home() }) },
+          { label: t("● 讲一篇新的", "● Start a new one"), run: () => this.startTalking({ purpose: "material", back: () => this.safely(this.home()) }) },
           ...view.rows.map((row) => ({ label: this.rowLabel(row), run: () => this.open(row.id) })),
         ];
         if (view.finished) entries.push({ label: t(`全部文章（${view.finished}）`, `All articles (${view.finished})`), run: () => this.library() });
@@ -803,20 +809,25 @@ export class App {
 
       case "notes": {
         const a = s.article;
-        const n = a.recordings.length;
-        const minutes = Math.max(1, Math.round(a.recordings.reduce((sum, r) => sum + r.durationMs, 0) / 60_000));
+        const good = a.recordings.filter((r) => r.status !== "failed");
+        const n = good.length;
+        const minutes = Math.max(1, Math.round(good.reduce((sum, r) => sum + r.durationMs, 0) / 60_000));
         const tidying = a.recordings.some((r) => r.status === "processing");
-        const last = a.recordings[n - 1];
+        const last = a.recordings[a.recordings.length - 1];
         const headLine =
           t(`讲了 ${n} 段 · ${minutes} 分钟`, `${n} ${n === 1 ? "recording" : "recordings"} · ${minutes} min`) + (tidying ? t(" · 在整理", " · tidying up") : "");
-        const preview = last?.text
-          ? t(`「${snippet(last.text, 200)}」`, `“${snippet(last.text, 200)}”`)
-          : t("正在把刚才讲的整理出来…", "Tidying up what you just said…");
+        // A recording that could not be turned into words is said plainly, not silently dropped.
+        const preview =
+          last?.status === "failed"
+            ? t(`刚才那段没能转成文字：${last.error}`, `That last recording couldn’t be turned into words: ${last.error}`)
+            : last?.text
+              ? t(`「${snippet(last.text, 200)}」`, `“${snippet(last.text, 200)}”`)
+              : t("正在把刚才讲的整理出来…", "Tidying up what you just said…");
         const entries: Entry[] = [
           { label: t("写成文章", "Write it up"), run: () => this.compose(a) },
           {
             label: t("接着讲", "Keep talking"),
-            run: () => this.startTalking({ purpose: "material", articleId: a.id, back: () => void this.attempt(() => this.open(a.id)) }),
+            run: () => this.startTalking({ purpose: "material", articleId: a.id, back: () => this.safely(this.open(a.id)) }),
           },
           { label: t("看看我讲了什么", "Read what I said"), run: () => this.read(a, "material") },
           {
