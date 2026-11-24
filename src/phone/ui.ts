@@ -49,6 +49,8 @@ export function mountPhone(app: App, storage: Storage): void {
   let libraryFor = "";
   let codeError = "";
   let notionBusy = false;
+  /** Deleting takes two taps: the first arms the button for a few seconds. */
+  let deleteArmed = "";
 
   const toast = (message: string) => {
     document.querySelector(".toast")?.remove();
@@ -202,6 +204,9 @@ export function mountPhone(app: App, storage: Storage): void {
     }
     put("now", now);
 
+    const removeButton = (id: string) =>
+      `<button class="btn quiet" data-act="delete" data-id="${e(id)}">${deleteArmed === id ? t("再点一次，彻底删除", "Tap again to delete for good") : t("删除", "Delete")}</button>`;
+
     // The article, typeset.
     let card = "";
     if (article && article.status === "ready" && article.markdown) {
@@ -220,6 +225,7 @@ export function mountPhone(app: App, storage: Storage): void {
                 : `<button class="btn" data-act="notion" data-id="${e(article.id)}" ${notionBusy ? "disabled" : ""}>${t("发到 Notion", "Send to Notion")}</button>`
               : ""
           }
+          ${removeButton(article.id)}
         </div>
       </article>`;
     } else if (article && article.recordings.some((r) => r.text)) {
@@ -231,7 +237,7 @@ export function mountPhone(app: App, storage: Storage): void {
             .map((p) => `<p>${e(p)}</p>`)
             .join(""),
         )
-        .join("<hr>")}</div></article>`;
+        .join("<hr>")}</div><div class="actions">${removeButton(article.id)}</div></article>`;
     }
     put("article", card);
 
@@ -297,6 +303,24 @@ export function mountPhone(app: App, storage: Storage): void {
           .then(copy)
           .then((ok) => toast(ok ? t("复制了", "Copied") : t("没能复制", "Couldn’t copy")))
           .catch(() => toast(t("没能复制", "Couldn’t copy")));
+        break;
+      case "delete":
+        if (deleteArmed !== id) {
+          deleteArmed = id;
+          draw();
+          window.setTimeout(() => {
+            if (deleteArmed === id) {
+              deleteArmed = "";
+              draw();
+            }
+          }, 4000);
+        } else {
+          deleteArmed = "";
+          void app
+            .deleteFromPhone(id)
+            .then(() => toast(t("删掉了", "Deleted")))
+            .catch(() => toast(t("没能删除", "Couldn’t delete it")));
+        }
         break;
       case "notion":
         notionBusy = true;

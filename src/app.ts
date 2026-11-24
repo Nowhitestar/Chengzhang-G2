@@ -252,6 +252,13 @@ export class App {
     void this.attempt(() => this.open(id));
   }
 
+  /** From the phone page: delete an article for good, then go back to the opening page. */
+  async deleteFromPhone(id: string): Promise<void> {
+    if (this.talk) return;
+    await this.api.deleteArticle(id);
+    await this.attempt(() => this.home());
+  }
+
   /** From the phone page: the article was sent to Notion. */
   published(id: string, url: string): void {
     const s = this.screen;
