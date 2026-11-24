@@ -1,0 +1,20 @@
+{
+  "package_id": "ink.chengzhang.g2",
+  "edition": "202601",
+  "name": "Chengzhang",
+  "version": "0.1.0",
+  "min_sdk_version": "0.0.16",
+  "entrypoint": "index.html",
+  "permissions": [
+    {
+      "name": "network",
+      "desc": "Sends what you say to the Chengzhang backend to be transcribed and written up, and loads your articles from it.",
+      "whitelist": ["https://chengzhang-g2.example.com"]
+    },
+    {
+      "name": "g2-microphone",
+      "desc": "Records your voice on the glasses, only while you are talking to Chengzhang, so it can be written up."
+    }
+  ],
+  "supported_languages": ["en", "zh"]
+}
