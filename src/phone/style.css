@@ -156,6 +156,8 @@ button {
   height: 5px;
   border-radius: 3px;
   background: var(--ink);
+}
+.bar.new {
   animation: ink-in 0.25s ease-out;
 }
 .bar.break {

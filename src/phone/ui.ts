@@ -30,11 +30,21 @@ export function mountPhone(app: App, storage: Storage): void {
   root.innerHTML = `<main class="page">
     <header class="top" data-part="top"></header>
     <div data-part="banner"></div>
-    <section class="now" data-part="now"></section>
+    <section class="now">
+      <div data-part="now"></div>
+      <div class="talk" hidden>
+        <div class="clock" role="timer"><span class="dot" aria-hidden="true"></span><span data-part="time"></span></div>
+        <div class="bars" aria-hidden="true" data-part="bars"></div>
+        <p data-part="line"></p>
+      </div>
+    </section>
     <div data-part="article"></div>
     <div data-part="library"></div>
     <footer class="hint" data-part="hint"></footer>
   </main>`;
+  // While talking, the clock, the ink and the hint are separate parts: the clock ticks every second,
+  // and replacing the ink along with it would restart every bar's (and the red dot's) animation.
+  const talk = root.querySelector<HTMLElement>(".talk")!;
   const parts = new Map<string, HTMLElement>();
   root.querySelectorAll<HTMLElement>("[data-part]").forEach((el) => parts.set(el.dataset.part!, el));
   const shown = new Map<string, string>();
@@ -141,16 +151,23 @@ export function mountPhone(app: App, storage: Storage): void {
         now = `<div class="label">${t("眼镜上", "On the glasses")}</div><h1 class="display">${t("全部文章", "All articles")}</h1>`;
         break;
       case "listening": {
-        const bars = app.strokes.map((n) => (n ? `<span class="bar" style="width:${n * 14}px"></span>` : `<span class="bar break"></span>`)).join("");
+        const strokes = app.strokes;
+        // Only the newest stroke fades in; the ones already there stay put.
+        const bars = strokes
+          .map((n, i) => (n ? `<span class="bar${i === strokes.length - 1 ? " new" : ""}" style="width:${n * 14}px"></span>` : `<span class="bar break"></span>`))
+          .join("");
         const line = s.confirm
           ? t("不要这段录音了？在眼镜上选。还在录。", "Throw this recording away? Choose on the glasses. Still recording.")
           : s.purpose === "material"
             ? t("停顿、重复都没关系。讲完在镜腿上点一下。", "Pauses are fine. Tap the temple when done.")
             : s.purpose === "instruction"
-              ? t("说一句要怎么改。说完点一下。", "Say what to change. Tap when done.")
+              ? app.held
+                ? t("说一句要怎么改。说完松手。", "Say what to change. Let go when done.")
+                : t("说一句要怎么改。说完点一下。", "Say what to change. Tap when done.")
               : e(s.question);
-        now = `<div class="clock" role="timer"><span class="dot" aria-hidden="true"></span>${clock(app.talkingMs)}</div>
-          <div class="bars" aria-hidden="true">${bars}</div><p>${line}</p>`;
+        put("time", clock(app.talkingMs));
+        put("bars", bars);
+        put("line", line);
         break;
       }
       case "saving":
@@ -178,7 +195,9 @@ export function mountPhone(app: App, storage: Storage): void {
         break;
       case "review": {
         const n = s.article.annotations.find((x) => x.id === s.id);
-        now = `<div class="label">${t("逐条定夺", "Going through the notes")} · ${order.indexOf(s.id) + 1}/${s.article.annotations.length}</div><p>${e(n?.note ?? "")}</p>`;
+        // The same count the glasses show: notes already decided, plus this one.
+        const all = s.article.annotations.length;
+        now = `<div class="label">${t("逐条定夺", "Going through the notes")} · ${all - open + 1}/${all}</div><p>${e(n?.note ?? "")}</p>`;
         break;
       }
       case "reader":
@@ -205,6 +224,8 @@ export function mountPhone(app: App, storage: Storage): void {
         break;
     }
     put("now", now);
+    talk.hidden = s.name !== "listening";
+    if (talk.hidden) put("bars", "");
 
     const removeButton = (id: string) =>
       `<button class="btn quiet" data-act="delete" data-id="${e(id)}">${deleteArmed === id ? t("再点一次，彻底删除", "Tap again to delete for good") : t("删除", "Delete")}</button>`;

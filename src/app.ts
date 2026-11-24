@@ -127,6 +127,11 @@ export class App {
     return this.talk?.recorder.elapsedMs ?? 0;
   }
 
+  /** True while a take started by pressing and holding is running (letting go ends it). */
+  get held(): boolean {
+    return this.talk?.held ?? false;
+  }
+
   setLang(lang: Lang): void {
     this.lang = lang;
     this.t = makeT(lang);
