@@ -324,7 +324,8 @@ export class App {
         return;
       case "problem":
         if (input.type === "double") void this.bridge.shutDownPageContainer(1);
-        else if (input.type === "tap") void this.start();
+        // A recording that has not finished uploading is still held in memory: a tap sends it again.
+        else if (input.type === "tap") void (this.talk ? this.doneTalking() : this.start());
         return;
       case "notice":
         void this.attempt(() => this.home());
@@ -610,10 +611,6 @@ export class App {
       await this.api.finishRecording(id, slices, durationMs);
       await this.storage.set(TAKE_KEY, "");
       this.talk = null;
-      const article = await this.api.article(talk.articleId);
-      this.busy = false;
-      if (talk.purpose === "material") this.showNotes(article);
-      else this.showRevising({ ...article, revising: true }, talk.then);
     } catch (err) {
       this.busy = false;
       if (err instanceof ApiError && err.code !== "network") {
@@ -627,6 +624,17 @@ export class App {
         kind: "offline",
         message: t("录音还没传上去。\n看看手机的网络，然后点一下重试。录音还在。", "The recording hasn’t uploaded yet.\nCheck the phone’s connection, then tap to try again. Nothing is lost."),
       });
+      return;
+    }
+    // The recording is safely with the backend. Show where it went.
+    try {
+      const article = await this.api.article(talk.articleId);
+      this.busy = false;
+      if (talk.purpose === "material") this.showNotes(article);
+      else this.showRevising({ ...article, revising: true }, talk.then);
+    } catch (err) {
+      this.busy = false;
+      this.fail(err);
     }
   }
 

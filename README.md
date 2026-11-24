@@ -108,6 +108,8 @@ The backend also serves the built app, so one Node process is the whole deployme
 npm ci && npm run build && npm start
 ```
 
+Or with Docker: `docker build -t chengzhang-g2 .`, then `docker run -p 8787:8787 -v chengzhang-data:/app/data --env-file .env chengzhang-g2`.
+
 Set `ACCESS_CODE` on any server other people can reach: a new device then has to enter the code once, on the phone page, before it can use your keys. Use a host with a persistent disk for `DATA_DIR` (one SQLite file), and run a single instance: writing happens inside the process.
 
 Then build the app against that address and pack it:
@@ -156,7 +158,7 @@ scripts/e2e.ts  walks every screen in the simulator and saves the pictures
 npm test
 ```
 
-28 tests, no keys or network needed: the article format, measuring and paging for the glasses, input decoding, the recorder, and the complete backend flow (talk, write, decide each note, answer by voice, change, undo) run in memory against the simulated AI.
+30 tests, no keys or network needed: the article format, measuring and paging for the glasses, input decoding, the recorder, and the complete backend flow (talk, write, decide each note, answer by voice, change, undo) run in memory against the simulated AI.
 
 ```bash
 npm run e2e

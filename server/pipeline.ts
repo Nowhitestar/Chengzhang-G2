@@ -165,7 +165,7 @@ export function reconcile(draft: ArticleDraft, found: Source[]): { markdown: str
   for (const a of draft.annotations) {
     if (!inText.has(a.id) || seen.has(a.id)) continue;
     seen.add(a.id);
-    const sourced = Boolean(a.source_url) && allowed.has(normalizeUrl(a.source_url));
+    const sourced = /^https?:\/\//i.test(a.source_url.trim()) && allowed.has(normalizeUrl(a.source_url));
     if (a.kind === "added" && !sourced) {
       md = removeMark(md, a.id);
       continue;

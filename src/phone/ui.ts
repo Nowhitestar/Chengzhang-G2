@@ -94,7 +94,7 @@ export function mountPhone(app: App, storage: Storage): void {
             dismissed: n.kind === "diff" ? t("照你说的", "Left as you said") : t("跳过了", "Skipped"),
             answered: t("回答了", "Answered"),
           }[n.state];
-    const src = n.sourceUrl ? `<a href="${e(n.sourceUrl)}" target="_blank" rel="noopener noreferrer">${e(n.sourceTitle || hostOf(n.sourceUrl))}</a>` : "";
+    const src = /^https?:\/\//i.test(n.sourceUrl) ? `<a href="${e(n.sourceUrl)}" target="_blank" rel="noopener noreferrer">${e(n.sourceTitle || hostOf(n.sourceUrl))}</a>` : "";
     return `<li><span class="kind ${n.kind}">${e(kind)}</span><span class="${state ? "done" : ""}">${e(main)}${state ? ` · ${e(state)}` : ""}</span>${src ? `<span class="src">${src}</span>` : ""}</li>`;
   }
 
@@ -192,9 +192,11 @@ export function mountPhone(app: App, storage: Storage): void {
           <p>${e(s.article.revisionError || s.article.lastChange)}</p>${s.article.heard ? `<p>${t("听到的是：", "Heard: ")}“${e(s.article.heard)}”</p>` : ""}`;
         break;
       case "problem":
-        now = `<h1 class="display" style="font-size:24px">${e(s.message)}</h1>${
+        now = `<h1 class="display" style="font-size:24px">${
+          s.kind === "code" ? t("填入访问码", "Enter the access code") : e(s.message)
+        }</h1>${
           s.kind === "code"
-            ? `<form class="form" data-form="code"><input name="code" autocomplete="off" autocapitalize="off" placeholder="${t("访问码", "Access code")}" aria-label="${t("访问码", "Access code")}"><button class="btn solid">${t("继续", "Continue")}</button></form>${codeError ? `<p role="alert">${e(codeError)}</p>` : ""}`
+            ? `<p>${t("访问码由搭建这个成章服务的人提供，只需要填一次。", "Whoever runs this Chengzhang server gave it to you. You only need it once.")}</p><form class="form" data-form="code"><input name="code" autocomplete="off" autocapitalize="off" placeholder="${t("访问码", "Access code")}" aria-label="${t("访问码", "Access code")}"><button class="btn solid">${t("继续", "Continue")}</button></form>${codeError ? `<p role="alert">${e(codeError)}</p>` : ""}`
             : `<div class="actions"><button class="btn" data-act="retry">${t("重试", "Try again")}</button></div>`
         }`;
         break;

@@ -108,6 +108,8 @@ npx evenhub qr --url http://你的局域网IP:5173
 npm ci && npm run build && npm start
 ```
 
+也可以用 Docker：`docker build -t chengzhang-g2 .`，然后 `docker run -p 8787:8787 -v chengzhang-data:/app/data --env-file .env chengzhang-g2`。
+
 别人能访问到的服务器上请设置 `ACCESS_CODE`：新设备要先在手机页面上填一次访问码，才能用你的密钥。`DATA_DIR`（一个 SQLite 文件）要放在不会丢的磁盘上；只跑一个实例，因为写作任务在进程里跑。
 
 然后针对这个地址构建并打包：
@@ -156,7 +158,7 @@ scripts/e2e.ts  在模拟器里把每个画面走一遍并截图
 npm test
 ```
 
-28 个测试，不需要密钥和网络：文稿格式、眼镜上的量字和分页、输入解码、录音模块，以及用模拟 AI 在内存里跑的完整后端流程（讲、写、逐条定夺、语音回答、改稿、撤销）。
+30 个测试，不需要密钥和网络：文稿格式、眼镜上的量字和分页、输入解码、录音模块，以及用模拟 AI 在内存里跑的完整后端流程（讲、写、逐条定夺、语音回答、改稿、撤销）。
 
 ```bash
 npm run e2e

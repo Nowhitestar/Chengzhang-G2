@@ -22,8 +22,18 @@ const features = (): Features => ({ notion: notionReady(), demo: config.demo });
 const MAX_SLICE_BYTES = 1_500_000;
 const MAX_SLICES = 400;
 
+/** Per ten minutes, for the whole server: wrong access codes, and new devices. Blunt, but it bounds abuse. */
+const MAX_WRONG_CODES = 30;
+const MAX_NEW_DEVICES = 300;
+
 export function createApp(): Hono<Env> {
   const app = new Hono<Env>();
+  let wrongCodes = 0;
+  let newDevices = 0;
+  setInterval(() => {
+    wrongCodes = 0;
+    newDevices = 0;
+  }, 10 * 60_000).unref();
 
   app.use(
     "/api/*",
@@ -34,6 +44,12 @@ export function createApp(): Hono<Env> {
       maxAge: 86400,
     }),
   );
+
+  // Nothing the app sends as JSON is large; audio slices have their own, larger limit below.
+  app.use("/api/*", async (c, next) => {
+    if (c.req.path.includes("/chunks/")) return next();
+    return bodyLimit({ maxSize: 64_000, onError: (ctx) => ctx.json({ error: "Request too large." }, 413) })(c, next);
+  });
 
   app.onError((err, c) => {
     console.error("[api]", c.req.method, c.req.path, err);
@@ -50,7 +66,14 @@ export function createApp(): Hono<Env> {
     const lang: Lang = isLang(body.lang) ? body.lang : "en";
     const t = makeT(lang);
     if (config.accessCode && (body.code || "").trim() !== config.accessCode) {
+      // Guessing is slowed down for everyone once there have been too many wrong codes in a row.
+      if ((body.code || "").trim() && ++wrongCodes > MAX_WRONG_CODES) {
+        return c.json({ error: t("试的次数太多了，过十分钟再来。", "Too many wrong codes. Try again in ten minutes."), code: "limit" }, 429);
+      }
       return c.json({ error: t("访问码不对。", "That access code isn’t right."), code: "access_code" }, 403);
+    }
+    if (++newDevices > MAX_NEW_DEVICES) {
+      return c.json({ error: t("现在不能添加新设备，稍后再试。", "No new devices can be added right now. Try again later."), code: "limit" }, 429);
     }
     const { token } = store.createUser(lang);
     return c.json({ token, features: features() });

@@ -120,3 +120,34 @@ test("silence is not turned into words, and an empty take is thrown away", async
   const done = await c.call("POST", `/api/recordings/${rec2}/finish`, { chunks: 0 });
   assert.equal(done.data.discarded, true);
 });
+
+test("with an access code set, a device must present it once", async () => {
+  const { config } = await import("../server/config.ts");
+  const c = await newClient();
+  config.accessCode = "open-sesame";
+  try {
+    assert.equal(((await (await c.app.request("/api/health")).json()) as { accessCode: boolean }).accessCode, true);
+    const post = (body: unknown) => c.app.request("/api/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const refused = await post({ lang: "zh", code: "guess" });
+    assert.equal(refused.status, 403);
+    assert.deepEqual(await refused.json(), { error: "访问码不对。", code: "access_code" });
+    assert.equal((await post({})).status, 403);
+    const ok = await post({ code: " open-sesame " });
+    assert.equal(ok.status, 200);
+    assert.ok((await ok.json()).token);
+    // The device that already has a token keeps working.
+    assert.equal((await c.call("GET", "/api/home")).status, 200);
+  } finally {
+    config.accessCode = "";
+  }
+});
+
+test("oversized requests are refused", async () => {
+  const c = await newClient();
+  const id = (await c.call<{ id: string }>("POST", "/api/articles")).data.id;
+  const big = await c.call("POST", `/api/articles/${id}/edit`, { instruction: "x".repeat(100_000) });
+  assert.equal(big.status, 413);
+  const rec = (await c.call<{ id: string }>("POST", `/api/articles/${id}/recordings`, {})).data.id;
+  assert.equal((await c.call("PUT", `/api/recordings/${rec}/chunks/0`, new Uint8Array(1_600_000))).status, 413);
+  assert.equal((await c.call("PUT", `/api/recordings/${rec}/chunks/0`, new Uint8Array(640_000))).status, 200);
+});
