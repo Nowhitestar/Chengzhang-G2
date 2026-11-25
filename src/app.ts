@@ -959,7 +959,7 @@ export class App {
 
       case "revising": {
         const heard = s.article.heard ? t(`听到的是：「${s.article.heard}」`, `Heard: “${s.article.heard}”`) : "";
-        return { page: layout.words({ head: t("在改", "Changing it"), main: t("在改…", "Changing it…"), foot: heard || " ", footLines: 2 }) };
+        return { page: layout.words({ head: t("稍等", "One moment"), main: t("在改…", "Changing it…"), foot: heard || " ", footLines: 2 }) };
       }
 
       case "changed": {
