@@ -16,7 +16,11 @@ import * as store from "./store.ts";
 
 type Env = { Variables: { user: store.User; t: T } };
 
-const features = (): Features => ({ notion: notionReady(), demo: config.demo });
+const features = (): Features => ({
+  notion: notionReady(),
+  demo: config.demo,
+  simulated: config.mock.llm && config.mock.stt ? "both" : config.mock.llm ? "writing" : config.mock.stt ? "speech" : "",
+});
 
 /** 1.5 MB is about 45 seconds of 16 kHz mono audio; the app cuts slices well below that. */
 const MAX_SLICE_BYTES = 1_500_000;

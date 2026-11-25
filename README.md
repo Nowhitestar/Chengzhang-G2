@@ -90,6 +90,8 @@ cp .env.example .env
 
 Put an `OPENROUTER_API_KEY` in `.env` and restart `npm run dev`. One OpenRouter key covers both transcription (Qwen ASR) and writing (Claude). To call Anthropic directly for writing, set `ANTHROPIC_API_KEY` as well. All settings are listed in [.env.example](.env.example).
 
+Transcription can also go through Alibaba Cloud Model Studio (`STT_PROVIDER=dashscope`). If only one of the two halves has a key, that half is real and the other is simulated, and the phone page says which.
+
 ### On real glasses
 
 With `npm run dev` running, and the phone on the same network as your computer:
@@ -137,6 +139,8 @@ This writes `chengzhang-0.1.0.ehpk`, with the backend's origin in the manifest's
 - **The glasses do not render HTML.** A screen is a few text and list boxes at pixel positions on a 576 × 288 canvas. [`src/glasses/display.ts`](src/glasses/display.ts) takes a description of the wanted screen and sends the cheapest update: text in place when only words changed, a rebuild when the layout did. Text is measured with the firmware's glyph widths before it is sent, so nothing overflows ([`layout.ts`](src/glasses/layout.ts)).
 - **Audio never waits for the end.** The microphone stream is cut into slices of about 15 seconds at a pause and uploaded while you are still talking ([`src/audio.ts`](src/audio.ts)), so most of it is transcribed by the time you tap "done". Slices are kept on the phone until the backend has them, and on the backend only until they are transcribed.
 - **Writing is three Claude calls** ([`server/pipeline.ts`](server/pipeline.ts), prompts in [`server/prompts.ts`](server/prompts.ts)): *tidy* each recording (low effort), *fact-check* with Claude's web search (Claude Sonnet 5.5), then *write* with structured output (Claude Opus 5.5). A spoken change is one more call.
+- **The phone page moves in one language.** The page is re-rendered as HTML on every change; [`src/phone/motion.ts`](src/phone/motion.ts) works out what happened to each element and shows exactly that. What stayed glides to its new place, what is new rises in, what left fades where it stood, and a box that grew or shrank moves its edge while its buttons ride on it. Old and new words are never legible on top of each other: out, then in. Three durations (120, 260 and 420 ms) and three curves cover every change, and they are defined once. Apart from the height of two boxes, only transform and opacity animate. Positions are measured as they look on screen, so a change that arrives mid-flight continues from there. The page follows the system's light or dark appearance, uses two columns on a wide window, and with "reduce motion" on nothing travels or loops.
+- **The glasses cannot animate, so they hold still instead.** The same idea there means changing text in place and never redrawing what did not change: from talking to saving, the clock and the ink stay where they were and only the dot goes hollow.
 - **No keys in the app.** The WebView only knows the backend's address and a random device token. Model keys live on the server.
 - **It survives being closed.** The app remembers which article was open; a recording interrupted by closing the app is finished from the slices already uploaded; work interrupted by a server restart is reported as such, not left spinning.
 
@@ -145,11 +149,13 @@ src/            the app that runs in the Even app's WebView
   app.ts          which screen is showing and what a tap does there
   audio.ts        recording: loudness, slicing, upload with retry
   glasses/        display (containers), layout (measuring), screens, ink, input
-  phone/          the paper-and-ink page on the phone
+  phone/          the paper-and-ink page on the phone, and how it moves (motion.ts)
 server/         the backend: API, speech-to-text, Claude, prompts, storage, Notion
 shared/         types and the article format, used by both sides
 tests/          unit tests, and the whole backend flow in memory
-scripts/e2e.ts  walks every screen in the simulator and saves the pictures
+dev/            a storyboard: every state of the phone page, with canned data
+scripts/e2e.ts            walks every screen in the simulator and saves the pictures
+scripts/motion-check.ts   measures how the phone page moves
 ```
 
 ## Tests
@@ -165,6 +171,20 @@ npm run e2e
 ```
 
 Starts its own backend, dev server and simulator, then drives the app through every screen with the simulator's automation API, the way a person would with the touchpad, and saves each screen to `docs/screens`. On Linux without a display it uses `xvfb-run`. `LANG_UI=zh npm run e2e` walks the Chinese interface.
+
+```bash
+npm run motion
+```
+
+Measures how the phone page moves, in headless Chromium, against a storyboard of its 31 states (`dev/storyboard.html`, also handy to look at: `http://localhost:5173/dev/storyboard.html?play=1`). It needs Playwright: `npm i --no-save playwright && npx playwright install chromium`.
+
+| What it checks | Last run |
+|---|---|
+| Every state at 320, 390, 600 and 1280 px, light and dark, both languages: nothing overflows sideways, sticks out of its box, or is left behind by a transition | 496 visits, clean |
+| Frame times through every transition with the CPU slowed 4× | 1,301 frames, none late |
+| The same with an article of 200 paragraphs | 1,298 frames, none late |
+| Changing state every 50 ms, mid-animation, then stopping | identical to going there directly |
+| With "reduce motion" on | nothing travels, nothing loops |
 
 ## Privacy and safety
 
@@ -186,7 +206,7 @@ Details in [PRIVACY.md](PRIVACY.md).
 
 **Not verified yet.**
 
-- The calls to the real models (Qwen ASR through OpenRouter; Claude through OpenRouter or Anthropic) are written to the providers' documented request formats, but the pipeline has so far been run end to end with the simulated AI only. The prompts have not been tuned on real recordings.
+- Speech-to-text has been run for real through Alibaba Cloud Model Studio (`qwen3-asr-flash`, `STT_PROVIDER=dashscope`). The OpenRouter transcription route and every Claude call (through OpenRouter or Anthropic) are written to the providers' documented request formats but have not been run: the writing steps have so far only run with the simulated AI, and the prompts have not been tuned on real recordings.
 - It has been run in the Even Hub simulator only, not on G2 hardware. Timing of page rebuilds over Bluetooth, the microphone's levels, and behaviour with the phone locked need a real device.
 - "Send to Notion" is implemented against Notion's documented API and its Markdown conversion is tested, but it has not been run against a live workspace.
 

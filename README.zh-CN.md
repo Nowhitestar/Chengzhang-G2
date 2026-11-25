@@ -90,6 +90,8 @@ cp .env.example .env
 
 在 `.env` 里填 `OPENROUTER_API_KEY`，重启 `npm run dev`。一把 OpenRouter 的 key 同时管转写（千问语音识别）和写作（Claude）。想让写作直连 Anthropic，再填 `ANTHROPIC_API_KEY`。转写也可以改用阿里云百炼（`STT_PROVIDER=dashscope`）。全部配置见 [.env.example](.env.example)。
 
+转写和写作如果只配了其中一半的密钥，配了的那一半是真的，另一半是模拟的，手机页面上会写明是哪一半。
+
 ### 在真眼镜上
 
 `npm run dev` 开着，手机和电脑在同一个网络：
@@ -137,6 +139,8 @@ API_ORIGIN=https://你的后端地址 npm run pack
 - **眼镜不渲染网页。** 一个画面就是 576 × 288 画布上几个按像素摆放的文本框和列表。[`src/glasses/display.ts`](src/glasses/display.ts) 拿到想要的画面后，发最省的更新：只是字变了就原地改字，版式变了才重建。文字先按固件的字宽量过再发，不会溢出（[`layout.ts`](src/glasses/layout.ts)）。
 - **录音不等到最后才传。** 麦克风的声音在停顿处切成大约 15 秒一片，边讲边传（[`src/audio.ts`](src/audio.ts)），点「讲完了」时大部分已经转写好。分片在手机上留到后端收到为止，在后端只留到转写完为止。
 - **成文是三次 Claude 调用**（[`server/pipeline.ts`](server/pipeline.ts)，提示词在 [`server/prompts.ts`](server/prompts.ts)）：每段录音先*整理*，然后用 Claude 的联网搜索*查证*（Claude Sonnet 5.5），再用结构化输出*成文*（Claude Opus 5.5）。语音改稿是再一次调用。
+- **手机页面的动效只有一套说法。** 页面每次变化都重新生成 HTML；[`src/phone/motion.ts`](src/phone/motion.ts) 算出每个元素到底发生了什么，只把这件事演出来：还在的滑到新位置，新来的升上来，走了的在原地淡出，变大变小的盒子移动边缘，按钮跟着边缘走。新旧文字不会叠在一起：旧的先退，新的再进。所有变化只用三档时长（120、260、420 毫秒）和三条曲线，只定义一次。除了两个盒子的高度，只动 transform 和透明度。位置按屏幕上此刻看到的样子量，所以动画放到一半又来新的变化，会从当前位置接着走。页面跟随系统的深浅色，窗口够宽时分成两栏；打开系统的「减少动态效果」后，没有东西位移，也没有循环动画。
+- **眼镜做不了动画，所以它不乱动。** 同样的想法在眼镜上就是原地改字、没变的不重画：从「在讲」到「在保存」，时钟和墨痕留在原处，只有圆点变成空心。
 - **应用里没有密钥。** WebView 只知道后端地址和一个随机的设备令牌，模型密钥都在服务器上。
 - **关掉也不丢。** 应用记得上次打开的是哪一篇；讲到一半被关掉，会用已经传上去的分片把这段录音收尾；服务器重启打断的任务会明说「被打断了」，不会一直转圈。
 
@@ -145,11 +149,13 @@ src/            跑在 Even App 的 WebView 里的应用
   app.ts          现在是哪个画面、在这里点一下会发生什么
   audio.ts        录音：响度、分片、带重试的上传
   glasses/        显示（容器）、排版（量字宽）、各画面、墨痕、输入
-  phone/          手机上的纸墨页面
+  phone/          手机上的纸墨页面，以及它怎么动（motion.ts）
 server/         后端：接口、转写、Claude、提示词、存储、Notion
 shared/         两边共用的类型和文稿格式
 tests/          单元测试，以及在内存里跑完整的后端流程
-scripts/e2e.ts  在模拟器里把每个画面走一遍并截图
+dev/            故事板：手机页面的每个状态，用固定数据
+scripts/e2e.ts            在模拟器里把每个画面走一遍并截图
+scripts/motion-check.ts   实测手机页面的动效
 ```
 
 ## 测试
@@ -165,6 +171,20 @@ npm run e2e
 ```
 
 自己启动后端、开发服务器和模拟器，用模拟器的自动化接口像人用触控板那样把每个画面走一遍，并把截图存到 `docs/screens`。Linux 没有显示器时用 `xvfb-run`。`LANG_UI=zh npm run e2e` 走中文界面。
+
+```bash
+npm run motion
+```
+
+在无头 Chromium 里实测手机页面的动效，对象是一个包含全部 31 个状态的故事板（`dev/storyboard.html`，也可以直接打开看：`http://localhost:5173/dev/storyboard.html?play=1`）。需要 Playwright：`npm i --no-save playwright && npx playwright install chromium`。
+
+| 查什么 | 最近一次结果 |
+|---|---|
+| 每个状态在 320、390、600、1280 像素宽，深色和浅色，中英文下：没有横向溢出，没有东西伸出自己的盒子，过渡结束后没有残留 | 496 次，全部干净 |
+| CPU 降速 4 倍，走完每一个过渡的帧时间 | 1301 帧，没有掉帧 |
+| 同上，文章有 200 段 | 1298 帧，没有掉帧 |
+| 动画进行中每 50 毫秒换一次状态，然后停下 | 和直接到达那个状态完全一样 |
+| 打开「减少动态效果」 | 没有位移，没有循环动画 |
 
 ## 隐私和安全
 
@@ -186,7 +206,7 @@ npm run e2e
 
 **还没验证的。**
 
-- 对真实模型的调用（经 OpenRouter 的千问语音识别；经 OpenRouter 或 Anthropic 的 Claude）是按服务商文档的格式写的，但整条流程目前只用模拟 AI 跑通过，提示词还没有用真实录音调过。
+- 语音转写已经用阿里云百炼真实跑过（`qwen3-asr-flash`，`STT_PROVIDER=dashscope`）。经 OpenRouter 的转写，以及所有 Claude 调用（经 OpenRouter 或 Anthropic），是按服务商文档的格式写的，还没有真实跑过：写作的几步目前只用模拟 AI 跑通，提示词还没有用真实录音调过。
 - 只在 Even Hub 模拟器里跑过，没有上过 G2 真机。蓝牙下重建页面的快慢、麦克风的音量、手机锁屏时的表现，都要真机才能确认。
 - 「发到 Notion」按 Notion 文档的接口实现，Markdown 的转换有测试，但没有对着真实的工作区跑过。
 

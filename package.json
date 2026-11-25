@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "e2e": "tsx scripts/e2e.ts",
+    "motion": "tsx scripts/motion-check.ts",
     "pack": "tsx scripts/pack.ts",
     "qr": "evenhub qr"
   },

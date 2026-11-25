@@ -14,6 +14,8 @@ const QUIET_TICKS = 3;
 export class Ink {
   private rows: string[] = [""];
   private quiet = 0;
+  /** Every stroke of the take in order (1..3 for a stroke, 0 for a new line): the phone page shows all of it. */
+  readonly strokes: number[] = [];
 
   constructor(private readonly maxRows: number) {}
 
@@ -22,6 +24,7 @@ export class Ink {
     if (level < VOICE_LEVEL) {
       if (++this.quiet === QUIET_TICKS && this.rows[this.rows.length - 1]) {
         this.rows.push("");
+        this.strokes.push(0);
         this.trim();
         return true;
       }
@@ -30,6 +33,7 @@ export class Ink {
     this.quiet = 0;
     // Soft, normal, loud: one, two or three strokes joined into one mark.
     const stroke = STROKE.repeat(level < 0.5 ? 1 : level < 0.68 ? 2 : 3);
+    this.strokes.push(stroke.length);
     const last = this.rows[this.rows.length - 1]!;
     const next = last ? `${last} ${stroke}` : stroke;
     if (getTextWidth(next) > innerWidth()) {
@@ -47,10 +51,5 @@ export class Ink {
 
   get text(): string {
     return this.rows.join("\n");
-  }
-
-  /** The strokes as numbers (1..3 per stroke, 0 for a line break), for the phone-side picture. */
-  get strokes(): number[] {
-    return this.rows.flatMap((row, i) => [...(i ? [0] : []), ...row.split(" ").filter(Boolean).map((s) => s.length)]);
   }
 }

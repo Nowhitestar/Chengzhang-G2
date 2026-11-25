@@ -38,12 +38,21 @@ const linesBetween = (top: number, bottom: number, boxes = 1) => Math.max(1, Mat
  * The general screen: where you are, something to read, and a choice.
  * `main` is the content; `aside` is a dimmer second block (a source, what was heard).
  */
-export function choice(o: { head: string; main: string; aside?: string; asideLines?: number; items: string[]; rows?: number }): Page {
+export function choice(o: {
+  head: string;
+  main: string;
+  aside?: string;
+  asideLines?: number;
+  items: string[];
+  rows?: number;
+  /** Keep the main box at its full height whatever the text, so text that arrives later replaces it without a redraw. */
+  steady?: boolean;
+}): Page {
   const rows = Math.min(o.rows ?? 3, o.items.length);
   const bottom = HEIGHT - rows * ROW;
   const asideLines = o.aside ? Math.min(o.asideLines ?? 1, lineCount(o.aside)) : 0;
   const mainLines = linesBetween(HEAD_H, bottom, asideLines ? 2 : 1) - asideLines;
-  const used = Math.min(mainLines, Math.max(1, lineCount(o.main)));
+  const used = o.steady ? mainLines : Math.min(mainLines, Math.max(1, lineCount(o.main)));
   const boxes: Box[] = [head(o.head), text("main", HEAD_H, used, o.main)];
   if (o.aside && asideLines) boxes.push(text("aside", HEAD_H + linesHeight(used), asideLines, o.aside, 2));
   boxes.push(list(o.items, rows));

@@ -11,6 +11,7 @@ test("a new device gets a token, and nothing works without one", async () => {
   assert.equal(home.status, 200);
   assert.deepEqual(home.data.rows, []);
   assert.equal(home.data.features.demo, true);
+  assert.equal(home.data.features.simulated, "both");
 });
 
 test("talk, write it up, decide on each note, change it by voice, undo", async () => {

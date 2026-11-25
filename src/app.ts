@@ -41,7 +41,8 @@ export type Screen =
       /** Asking whether to throw the recording away (it keeps recording meanwhile). */
       confirm: boolean;
     }
-  | { name: "saving" }
+  /** The take is over and on its way to the backend. Same picture as listening, with the dot gone hollow. */
+  | { name: "saving"; purpose: RecordingPurpose; question: string }
   | { name: "notes"; article: ArticleView }
   | { name: "composing"; article: ArticleView }
   | { name: "failed"; article: ArticleView }
@@ -609,7 +610,8 @@ export class App {
     this.busy = true;
     window.clearInterval(talk.timer);
     void this.microphone(false);
-    this.go({ name: "saving" });
+    const question = this.screen.name === "listening" || this.screen.name === "saving" ? this.screen.question : "";
+    this.go({ name: "saving", purpose: talk.purpose, question });
     try {
       const { slices, durationMs } = await talk.recorder.finish();
       const id = await talk.recording;
@@ -761,8 +763,15 @@ export class App {
       case "notice":
         return { page: layout.words({ head: brand, main: s.message }) };
 
-      case "saving":
-        return { page: layout.words({ main: t("在保存…", "Saving…") }) };
+      case "saving": {
+        // The same boxes as while listening, so the glasses change two lines of text instead of
+        // redrawing the page: the solid dot goes hollow (not recording any more) and the hint says why.
+        const talk = this.talk;
+        if (!talk) return { page: layout.words({ main: t("在保存…", "Saving…") }) };
+        return {
+          page: layout.listening({ clock: `○ ${clock(talk.recorder.elapsedMs)}`, ink: talk.ink.text, foot: t("在保存…", "Saving…"), question: s.question || undefined }),
+        };
+      }
 
       case "home": {
         const view = s.view;
@@ -851,7 +860,8 @@ export class App {
             },
           },
         ];
-        return { page: layout.choice({ head: headLine, main: preview, items: labels(entries), rows: 4 }), entries };
+        // `steady`: the preview arrives a moment after the page; it should replace the placeholder in place.
+        return { page: layout.choice({ head: headLine, main: preview, items: labels(entries), rows: 4, steady: true }), entries };
       }
 
       case "composing": {

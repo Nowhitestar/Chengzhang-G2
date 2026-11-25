@@ -99,8 +99,10 @@ export interface LibraryRow {
 export interface Features {
   /** "Send to Notion" is offered only when the backend is configured for it. */
   notion: boolean;
-  /** True when no model key is configured and the backend simulates the AI. */
+  /** True when the backend simulates any part of the AI (no key for it, or asked to). */
   demo: boolean;
+  /** Which part is simulated: the speech-to-text, the writing, or both. Empty when nothing is. */
+  simulated: "" | "speech" | "writing" | "both";
 }
 
 export interface HomeView {

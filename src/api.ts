@@ -38,7 +38,7 @@ const CODE_KEY = "chengzhang.code";
 export class Api {
   private token = "";
   private opening: Promise<void> | null = null;
-  features: Features = { notion: false, demo: false };
+  features: Features = { notion: false, demo: false, simulated: "" };
 
   constructor(
     private readonly storage: Storage,
