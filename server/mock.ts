@@ -42,11 +42,21 @@ const SOURCE = { title: "Time management: The Eisenhower Method (Wikipedia)", ur
 
 const between = (s: string, name: string) => new RegExp(`<${name}[^>]*>\\n?([\\s\\S]*?)\\n?</${name}>`).exec(s)?.[1]?.trim() ?? "";
 
+/** The to-do list example, however the speech recogniser chose to spell it. */
+const CANNED = /to[- ]?do list/i;
+
+/**
+ * A stand-in for the model's tidying: drop the filler and the stumbles. Written to cope with what a
+ * real speech recogniser returns as well as with the script above (fewer commas, digits for numbers).
+ */
 function tidy(transcript: string): string {
   const cleaned = transcript
-    .replace(/\b(so, )?(um|uh|er),?\s*/gi, "")
-    .replace(/,?\s*\b(you know|like|I mean|honestly),/gi, "")
-    .replace(/\b(\w+(?: \w+)?), \1\b/gi, "$1")
+    .replace(/\b(?:so,? )?(?:um+|uh+|er+)\b[,.]?\s*/gi, "")
+    .replace(/,?\s*\b(?:you know|I mean|honestly)\b,?/gi, "")
+    .replace(/,\s*like,/gi, "")
+    .replace(/\b(had|was|is|it's|about),? like,? /gi, "$1 ")
+    .replace(/\b(\w+(?: \w+){0,2}),? \1\b/gi, "$1")
+    .replace(/\s+([,.!?])/g, "$1")
     .replace(/\s{2,}/g, " ")
     .replace(/(^|[.!?]\s+)([a-z])/g, (_m, lead: string, ch: string) => lead + ch.toUpperCase())
     .trim();
@@ -58,7 +68,7 @@ function tidy(transcript: string): string {
 }
 
 function draft(material: string): ArticleDraft {
-  if (/to-do list/i.test(material)) {
+  if (CANNED.test(material)) {
     return {
       title: "Why I stopped keeping a to-do list",
       gist: "A giant to-do list never says what matters today. Three things on paper each morning does.",
@@ -102,13 +112,18 @@ function edit(user: string): EditResult {
   const instruction = between(user, "instruction");
   const question = /<question mark="([\w-]+)">/.exec(user);
   if (question) {
-    const answer = instruction.replace(/^(um|uh)[,\s]*/i, "").replace(/[.!?]+$/, "").trim();
-    const worked = `for ${answer.charAt(0).toLowerCase()}${answer.slice(1)}`;
+    // A recogniser may write the hesitation as its own sentence ("Um. About six months.").
+    const answer = instruction
+      .replace(/^(?:(?:um+|uh+|er+|well|so)\b[\s,.…-]*)+/i, "")
+      .replace(/[.!?]+$/, "")
+      .trim();
+    const said = `${answer.charAt(0).toLowerCase()}${answer.slice(1)}`;
+    const worked = `for ${said}`;
     return {
       title,
       gist,
       markdown: markdown.replace(new RegExp(`<mark data-id="${question[1]}">[\\s\\S]*?</mark>`), worked),
-      summary: `Added your answer: ${answer}.`,
+      summary: `Added your answer: ${said}.`,
       changed: true,
     };
   }
@@ -132,7 +147,7 @@ export async function mockClaude(opts: CallOptions): Promise<LlmResult> {
       return { text: tidy(between(opts.user, "transcript")), sources: [] };
     case "research": {
       // Keyed the same way as the canned article below, so the two always agree.
-      const canned = /to-do list/i.test(opts.user);
+      const canned = CANNED.test(opts.user);
       return {
         text: canned
           ? [

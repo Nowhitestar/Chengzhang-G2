@@ -164,7 +164,7 @@ scripts/motion-check.ts   measures how the phone page moves
 npm test
 ```
 
-30 tests, no keys or network needed: the article format, measuring and paging for the glasses, input decoding, the recorder, and the complete backend flow (talk, write, decide each note, answer by voice, change, undo) run in memory against the simulated AI.
+34 tests, no keys or network needed: the article format, measuring and paging for the glasses, input decoding, the recorder, speech-to-text against a provider that is busy or refusing (a busy one is asked again, so a take is not lost to a rate limit), and the complete backend flow (talk, write, decide each note, answer by voice, change, undo) run in memory against the simulated AI.
 
 ```bash
 npm run e2e
@@ -206,7 +206,7 @@ Details in [PRIVACY.md](PRIVACY.md).
 
 **Not verified yet.**
 
-- Speech-to-text has been run for real through Alibaba Cloud Model Studio (`qwen3-asr-flash`, `STT_PROVIDER=dashscope`). The OpenRouter transcription route and every Claude call (through OpenRouter or Anthropic) are written to the providers' documented request formats but have not been run: the writing steps have so far only run with the simulated AI, and the prompts have not been tuned on real recordings.
+- Speech-to-text has been run for real through Alibaba Cloud Model Studio (`qwen3-asr-flash`, `STT_PROVIDER=dashscope`): a 44-second take, a spoken answer and a spoken change, through the whole backend. The OpenRouter transcription route and every Claude call (through OpenRouter or Anthropic) are written to the providers' documented request formats but have not been run: the writing steps have so far only run with the simulated AI, and the prompts have not been tuned on real recordings.
 - It has been run in the Even Hub simulator only, not on G2 hardware. Timing of page rebuilds over Bluetooth, the microphone's levels, and behaviour with the phone locked need a real device.
 - "Send to Notion" is implemented against Notion's documented API and its Markdown conversion is tested, but it has not been run against a live workspace.
 

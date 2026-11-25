@@ -10,6 +10,9 @@ delete process.env.NOTION_TOKEN;
 
 import type { Hono } from "hono";
 import type { ArticleView } from "../shared/types.ts";
+import { tone } from "./helpers-audio.ts";
+
+export { tone };
 
 const { createApp } = await import("../server/app.ts");
 const { resetDbForTests } = await import("../server/db.ts");
@@ -21,15 +24,6 @@ export interface Client {
   article: (id: string) => Promise<ArticleView>;
   until: (id: string, done: (a: ArticleView) => boolean) => Promise<ArticleView>;
   say: (articleId: string, seconds: number, purpose?: string, target?: string) => Promise<string>;
-}
-
-/** A second of something that is not silence: a 220 Hz tone at 16 kHz, 16-bit mono. */
-export function tone(seconds: number): Uint8Array {
-  const samples = Math.round(seconds * 16000);
-  const out = new Uint8Array(samples * 2);
-  const view = new DataView(out.buffer);
-  for (let i = 0; i < samples; i++) view.setInt16(i * 2, Math.round(Math.sin((i / 16000) * 2 * Math.PI * 220) * 9000), true);
-  return out;
 }
 
 export async function newClient(lang = "en"): Promise<Client> {

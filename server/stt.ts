@@ -39,7 +39,17 @@ export function pcmToWav(pcm: Uint8Array): Uint8Array {
 
 export const pcmMs = (pcm: Uint8Array) => Math.round((pcm.length / BYTES_PER_SECOND) * 1000);
 
-async function failure(res: Response, t: T): Promise<SttError> {
+/** Worth another try: the provider is busy or briefly broken, not refusing. */
+class Transient extends Error {
+  constructor(readonly final: SttError) {
+    super(final.message);
+  }
+}
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** Waits before the second, third and fourth attempt. A take is worth a few seconds of patience. */
+const RETRY_AFTER_MS = process.env.STT_RETRY_MS ? process.env.STT_RETRY_MS.split(",").map(Number) : [900, 2200, 5000];
+
+async function failure(res: Response, t: T): Promise<SttError | Transient> {
   const body = await res.text().catch(() => "");
   let message = body.slice(0, 200);
   try {
@@ -52,8 +62,9 @@ async function failure(res: Response, t: T): Promise<SttError> {
   if (res.status === 401) return new SttError(t("转写密钥无效。", "The transcription key is invalid."));
   if (res.status === 402 || res.status === 403)
     return new SttError(t("转写服务没有额度或权限。", "The transcription service is out of credit or access."));
-  if (res.status === 429) return new SttError(t("转写请求太频繁，稍后再试。", "Too many transcription requests. Try again shortly."));
-  return new SttError(t(`转写失败（${res.status}）。`, `Transcription failed (${res.status}).`));
+  if (res.status === 429) return new Transient(new SttError(t("转写请求太频繁，稍后再试。", "Too many transcription requests. Try again shortly.")));
+  const failed = new SttError(t(`转写失败（${res.status}）。`, `Transcription failed (${res.status}).`));
+  return res.status >= 500 ? new Transient(failed) : failed;
 }
 
 async function viaOpenRouter(wav: Uint8Array, t: T): Promise<string> {
@@ -118,12 +129,22 @@ export async function transcribe(pcm: Uint8Array, t: T, hint: { purpose: Recordi
     );
   }
   const wav = pcmToWav(pcm);
-  try {
-    return config.stt.provider === "dashscope" ? await viaDashScope(wav, t) : await viaOpenRouter(wav, t);
-  } catch (err) {
-    if (err instanceof SttError) throw err;
-    if (err instanceof Error && err.name === "TimeoutError") throw new SttError(t("转写超时了。", "Transcription timed out."));
-    console.error("[stt]", err);
-    throw new SttError(t("连不上转写服务。", "Can’t reach the transcription service."));
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return config.stt.provider === "dashscope" ? await viaDashScope(wav, t) : await viaOpenRouter(wav, t);
+    } catch (err) {
+      if (err instanceof SttError) throw err;
+      const wait = RETRY_AFTER_MS[attempt];
+      const timedOut = err instanceof Error && err.name === "TimeoutError";
+      // Busy, briefly broken or unreachable: try again a few times before giving the take up.
+      if (wait !== undefined && !timedOut) {
+        await sleep(wait * (0.8 + Math.random() * 0.4));
+        continue;
+      }
+      if (err instanceof Transient) throw err.final;
+      if (timedOut) throw new SttError(t("转写超时了。", "Transcription timed out."));
+      console.error("[stt]", err);
+      throw new SttError(t("连不上转写服务。", "Can’t reach the transcription service."));
+    }
   }
 }
