@@ -441,28 +441,49 @@ export function mountPhone(app: PhoneHost, storage: Storage, root = document.que
     }
     lastArticle = article?.id ?? "";
 
-    // The note being decided on the glasses: bring its sentence into view here.
+    // The note being decided on the glasses: bring its sentence into view here. Coming from another note,
+    // wait until what was just decided has been shown (the highlight draining, the corrected words
+    // arriving) before moving on: one thing at a time, where the eye already is.
     const focus = s.name === "review" ? s.id : "";
-    if (focus && focus !== lastFocus) reveal(page.querySelector<HTMLElement>("mark.focus"), "center");
+    if (focus && focus !== lastFocus) reveal(() => page.querySelector<HTMLElement>("mark.focus"), "center", lastFocus ? SETTLE_MS : 0);
     lastFocus = focus;
 
     // The page being read on the glasses: follow along.
     const reading = s.name === "reader" && s.source === "article" ? `${s.article.id}:${s.page}` : "";
     if (reading && reading !== lastPage && s.name === "reader") {
       const start = (s.pages[s.page] ?? "").replace(/^[■•│〔\s\d.]+/, "").slice(0, 18);
-      const block = start ? Array.from(page.querySelectorAll<HTMLElement>(".prose > [data-key]")).find((el) => el.textContent?.includes(start)) : undefined;
-      reveal(block ?? (s.page === 0 ? page.querySelector<HTMLElement>(".card") : null), "start");
+      const first = s.page === 0;
+      reveal(
+        () =>
+          (start ? Array.from(page.querySelectorAll<HTMLElement>(".prose > [data-key]")).find((el) => el.textContent?.includes(start)) : undefined) ??
+          (first ? page.querySelector<HTMLElement>(".card") : null),
+        "start",
+      );
     }
     lastPage = reading;
   }
 
-  /** Scroll something into view, unless it is comfortably in view already. */
-  function reveal(el: HTMLElement | null | undefined, block: "center" | "start"): void {
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    if (r.top > innerHeight * 0.12 && r.bottom < innerHeight * 0.8) return;
-    // After the current change has started moving, so the two do not fight over the first frame.
-    requestAnimationFrame(() => el.scrollIntoView({ block, behavior: motionOK() ? "smooth" : "auto" }));
+  /** How long a decision takes to show: the highlighter's stroke, and a breath. */
+  const SETTLE_MS = 600;
+  let revealTimer = 0;
+
+  /**
+   * Scroll something into view, unless it is comfortably in view already. The element is looked up
+   * when the time comes, because by then the page may hold a new one in its place; asking again
+   * replaces a scroll that has not started yet.
+   */
+  function reveal(find: () => HTMLElement | null | undefined, block: "center" | "start", after = 0): void {
+    window.clearTimeout(revealTimer);
+    const go = () => {
+      const el = find();
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      if (r.top > innerHeight * 0.12 && r.bottom < innerHeight * 0.8) return;
+      el.scrollIntoView({ block, behavior: motionOK() ? "smooth" : "auto" });
+    };
+    // Never in the same frame as the change itself, so the two do not fight over it.
+    if (after > 0) revealTimer = window.setTimeout(go, after);
+    else requestAnimationFrame(go);
   }
 
   // ---------- drawing ----------

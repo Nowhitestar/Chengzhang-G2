@@ -13,6 +13,17 @@ import { pcmMs } from "./stt.ts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const DELAY = Number(process.env.MOCK_DELAY_MS ?? 1200);
+/**
+ * Per-step delays, for example MOCK_DELAYS="tidy=900,edit=1500,answer=1500". A recording can keep
+ * "Writing" on screen long enough to read without making every small step wait as long.
+ */
+const DELAYS: Record<string, number> = Object.fromEntries(
+  (process.env.MOCK_DELAYS ?? "")
+    .split(",")
+    .map((pair) => pair.split("="))
+    .filter(([step, ms]) => step && Number.isFinite(Number(ms)))
+    .map(([step, ms]) => [step!.trim(), Number(ms)]),
+);
 
 /** What the pretend author says, with the stumbles a real recording has. */
 const SCRIPT = [
@@ -141,7 +152,7 @@ function edit(user: string): EditResult {
 }
 
 export async function mockClaude(opts: CallOptions): Promise<LlmResult> {
-  await sleep(DELAY);
+  await sleep(DELAYS[opts.step] ?? DELAY);
   switch (opts.step) {
     case "tidy":
       return { text: tidy(between(opts.user, "transcript")), sources: [] };

@@ -182,7 +182,7 @@ Measures how the phone page moves, in headless Chromium, against a storyboard of
 |---|---|
 | Every state at 320, 390, 600 and 1280 px, light and dark, both languages: nothing overflows sideways, sticks out of its box, or is left behind by a transition | 496 visits, clean |
 | Frame times through every transition with the CPU slowed 4× | 1,301 frames, none late |
-| The same with an article of 200 paragraphs | 1,298 frames, none late |
+| The same with an article of 200 paragraphs | 1,290 frames, one late (33 ms) |
 | Changing state every 50 ms, mid-animation, then stopping | identical to going there directly |
 | With "reduce motion" on | nothing travels, nothing loops |
 
