@@ -204,6 +204,8 @@ Details in [PRIVACY.md](PRIVACY.md).
 
 **What existed before November 23.** Chengzhang itself: the product idea, the name and mark, the paper-and-ink look and the rules listed above, which belong to an existing web app whose code is private and not in this repository. Everything here (the G2 app, the backend, the prompts, the tests) was written during the hackathon and shares no code with the web app. It uses the same model providers.
 
+**The demo video.** One continuous run in the Even Hub simulator, with the phone page filmed at its real frame rate. What is said to the glasses is really transcribed (Qwen ASR); the writing is simulated in that recording, because there was no Claude credit where it was recorded, and the video says so on every frame. The voice-over and the spoken takes are the author's own voice, cloned and synthesised; the music is original. The script is in [docs/SUBMISSION.md](docs/SUBMISSION.md).
+
 **Not verified yet.**
 
 - Speech-to-text has been run for real through Alibaba Cloud Model Studio (`qwen3-asr-flash`, `STT_PROVIDER=dashscope`): a 44-second take, a spoken answer and a spoken change, through the whole backend. The OpenRouter transcription route and every Claude call (through OpenRouter or Anthropic) are written to the providers' documented request formats but have not been run: the writing steps have so far only run with the simulated AI, and the prompts have not been tuned on real recordings.
