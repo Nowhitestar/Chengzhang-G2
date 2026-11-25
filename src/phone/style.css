@@ -115,6 +115,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-height: 100vh;
   min-height: 100dvh;
 }
 
@@ -531,12 +532,16 @@ button {
   background-size: 0% 100%;
 }
 .note.diff.open {
-  text-decoration: underline wavy var(--red);
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: var(--red);
   text-decoration-thickness: 1.5px;
   text-underline-offset: 4px;
 }
 .note.ask.open {
-  text-decoration: underline dashed var(--ink2);
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-color: var(--ink2);
   text-underline-offset: 4px;
 }
 /*
@@ -544,7 +549,9 @@ button {
  * already highlighted, so it gets a line of ink under it; the others get a wash.
  */
 .note.added {
-  text-decoration: underline solid transparent 1.5px;
+  text-decoration-line: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1.5px;
   text-underline-offset: 5px;
   transition:
     background-size var(--t-ink) var(--ease-move),
@@ -620,7 +627,7 @@ button {
 }
 .notes a {
   color: inherit;
-  text-decoration: underline;
+  text-decoration-line: underline;
   text-decoration-color: var(--ring);
   text-underline-offset: 3px;
 }

@@ -281,6 +281,8 @@ export function transition(root: HTMLElement, update: () => void): { entered: El
       const wide = el.getAttribute("data-size") === "w";
       const [from, to, prop] = wide ? [width, rect.width, "width"] : [height, rect.height, "height"];
       if (Math.abs(to - from) < 1 || !onScreen(rect)) continue;
+      // "clip" leaves layout alone; a WebView too old to know it keeps "hidden", which is close enough.
+      el.style.overflow = "hidden";
       el.style.overflow = "clip";
       const a = el.animate([{ [prop]: `${from}px` }, { [prop]: `${to}px` }], { duration: T.slow, easing: EASE.move });
       sizing.set(el, a);
