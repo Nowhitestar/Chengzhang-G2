@@ -16,6 +16,10 @@ Text for the DoraHacks submission, and what the demo video shows. Everything her
 
 **Track.** 04, AI Assistants & Work. Core integration: Claude, through the Anthropic API or OpenRouter (tidying transcripts, web fact-checking, structured-output writing, editing from a spoken instruction). Speech-to-text is Qwen ASR, through OpenRouter or Alibaba Cloud Model Studio. Notion is the optional destination.
 
+**Business model.** Chengzhang is already a product (chengzhang.ink) with no subscription: people top up credits and pay as they go, priced from the real model cost. The glasses edition is sold on the same credits. Next: sign the glasses in with a Chengzhang account, so they share the balance and the finished piece opens in the web app for longer editing and publishing.
+
+**Try it on G2.** Scan the QR code in the README with the Even Realities app (developer mode), or open https://chengzhang-g2-production.up.railway.app; access code `heads-up-g2`. Real speech-to-text and real Claude; the code is good for 40 articles a day in all, and 10 per device. The packed app is `release/chengzhang-g2-0.1.0.ehpk` in the repository.
+
 **Careful with data.** No accounts; a random device token. Audio is deleted once transcribed. An AI-added sentence is deleted by the backend unless its source is a page the fact check actually returned. Nothing you said is changed without you choosing it. No keys in the app.
 
 ## The demo video
