@@ -1,6 +1,6 @@
 # Submission
 
-The description below is what goes into the DoraHacks "Describe your Build" field, as Markdown. The screenshots load from this repository, so it has to be public.
+The description below is what goes into the DoraHacks "Describe your Build" field, as Markdown. The screenshots load from this repository, so it has to be public. DoraHacks' editor does not render Markdown tables well, so there are none.
 
 ---
 
@@ -47,15 +47,13 @@ Under the hood:
 
 ## Tech stack
 
-| | |
-|---|---|
-| Glasses app | TypeScript, Vite, Even Hub SDK, `@evenrealities/pretext` for measuring text |
-| AI | Claude Opus 5.5 (tidying, writing with structured output, edits) and Claude Sonnet 5.5 with web search (fact check), through the Anthropic API or OpenRouter |
-| Speech-to-text | Qwen3-ASR, through Alibaba Cloud Model Studio or OpenRouter |
-| Backend | Node.js 22, Hono, Node's built-in SQLite |
-| Integrations | Notion API ("Send to Notion", optional) |
-| Hosting | Docker on Railway |
-| Testing | 36 unit and API tests run in memory; every screen walked in the Even Hub simulator through its automation API; the phone page's motion measured with Playwright; `npm run live` sends one article through real Claude |
+- **Glasses app:** TypeScript, Vite, the Even Hub SDK, and `@evenrealities/pretext` for measuring text.
+- **AI:** Claude Opus 5.5 for tidying, writing with structured output, and edits; Claude Sonnet 5.5 with web search for the fact check. Through the Anthropic API or OpenRouter.
+- **Speech-to-text:** Qwen3-ASR, through Alibaba Cloud Model Studio or OpenRouter.
+- **Backend:** Node.js 22, Hono, and Node's built-in SQLite.
+- **Integrations:** the Notion API, for the optional "Send to Notion".
+- **Hosting:** Docker on Railway.
+- **Testing:** 36 unit and API tests run in memory; every screen walked in the Even Hub simulator through its automation API; the phone page's motion measured with Playwright; `npm run live` sends one article through real Claude.
 
 ## Hackathon requirements
 
