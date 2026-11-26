@@ -54,6 +54,20 @@ export interface CallOptions {
   format?: z.ZodType;
 }
 
+/** What one call used, for anyone who wants to count (the live check prints these). */
+export interface CallUsage {
+  step: string;
+  model: string;
+  tokensIn: number;
+  tokensOut: number;
+  searches: number;
+  ms: number;
+}
+let usageListener: ((u: CallUsage) => void) | null = null;
+export function onUsage(fn: ((u: CallUsage) => void) | null): void {
+  usageListener = fn;
+}
+
 let client: Anthropic | null = null;
 let fallbackUnavailable = false;
 
@@ -192,9 +206,9 @@ async function request(opts: CallOptions): Promise<LlmResult> {
     if (reply.stop_reason === "max_tokens") throw new LlmError("内容太长，没能一次写完。", "Too long to finish in one go.");
     break;
   }
-  console.log(
-    `[llm] ${opts.step} ${served} in=${tokensIn} out=${tokensOut}${searches ? ` searches=${searches}` : ""} ${Date.now() - started}ms`,
-  );
+  const ms = Date.now() - started;
+  console.log(`[llm] ${opts.step} ${served} in=${tokensIn} out=${tokensOut}${searches ? ` searches=${searches}` : ""} ${ms}ms`);
+  usageListener?.({ step: opts.step, model: served, tokensIn, tokensOut, searches, ms });
   return { text: text.join("").trim(), sources: Array.from(sources.values()) };
 }
 

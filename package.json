@@ -15,6 +15,7 @@
     "test": "tsx --test tests/*.test.ts",
     "e2e": "tsx scripts/e2e.ts",
     "motion": "tsx scripts/motion-check.ts",
+    "live": "tsx --env-file-if-exists=.env scripts/live-check.ts",
     "pack": "tsx scripts/pack.ts",
     "qr": "evenhub qr"
   },
