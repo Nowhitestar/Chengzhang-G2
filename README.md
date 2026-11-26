@@ -167,6 +167,12 @@ npm test
 34 tests, no keys or network needed: the article format, measuring and paging for the glasses, input decoding, the recorder, speech-to-text against a provider that is busy or refusing (a busy one is asked again, so a take is not lost to a rate limit), and the complete backend flow (talk, write, decide each note, answer by voice, change, undo) run in memory against the simulated AI.
 
 ```bash
+npm run live
+```
+
+One article through the backend with real Claude: tidy, fact check with web search, write, decide each note, answer by voice, a spoken change, undo. Speech-to-text is simulated; everything else is real, and it prints what came back, how long each step took and what each call used. It needs `ANTHROPIC_API_KEY` (or `OPENROUTER_API_KEY`). One run uses about 38,000 input and 2,500 output tokens and one or two web searches, most of the input in the fact check; `LANG_UI=zh npm run live` runs it with the Chinese interface.
+
+```bash
 npm run e2e
 ```
 
@@ -208,7 +214,8 @@ Details in [PRIVACY.md](PRIVACY.md).
 
 **Not verified yet.**
 
-- Speech-to-text has been run for real through Alibaba Cloud Model Studio (`qwen3-asr-flash`, `STT_PROVIDER=dashscope`): a 44-second take, a spoken answer and a spoken change, through the whole backend. The OpenRouter transcription route and every Claude call (through OpenRouter or Anthropic) are written to the providers' documented request formats but have not been run: the writing steps have so far only run with the simulated AI, and the prompts have not been tuned on real recordings.
+- Speech-to-text has been run for real through Alibaba Cloud Model Studio (`qwen3-asr-flash`, `STT_PROVIDER=dashscope`): a 44-second take, a spoken answer and a spoken change, through the whole backend. The OpenRouter transcription route has not been run.
+- Writing has been run for real straight against the Anthropic API (`ANTHROPIC_API_KEY`): tidy, edit and answer on Claude Opus 5.5, the fact check on Claude Sonnet 5.5 with web search, the article on Claude Opus 5.5 with structured output, and the server-side fallback beta switched on. `npm run live` walks one article through all of it, in both interface languages; the material in those runs was the canned to-do-list talk (what the speech recogniser returned for a real take), not new recordings, so the prompts have been checked on one piece of material only. Claude through OpenRouter has not been run: the key there is out of credit.
 - It has been run in the Even Hub simulator only, not on G2 hardware. Timing of page rebuilds over Bluetooth, the microphone's levels, and behaviour with the phone locked need a real device.
 - "Send to Notion" is implemented against Notion's documented API and its Markdown conversion is tested, but it has not been run against a live workspace.
 

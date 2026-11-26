@@ -167,6 +167,12 @@ npm test
 34 个测试，不需要密钥和网络：文稿格式、眼镜上的量字和分页、输入解码、录音模块、转写服务繁忙或拒绝时的表现（繁忙会重试，一段录音不会因为限流而丢），以及用模拟 AI 在内存里跑的完整后端流程（讲、写、逐条定夺、语音回答、改稿、撤销）。
 
 ```bash
+npm run live
+```
+
+用真实的 Claude 把一篇文章在后端走一遍：整理、联网核查、成文、逐条定夺、语音回答、口头改稿、撤销。只有语音转写是模拟的，其余都是真调用；每一步返回了什么、花了多久、用了多少 token，都会打印出来。需要 `ANTHROPIC_API_KEY`（或 `OPENROUTER_API_KEY`）。跑一次大约用 3.8 万输入 token、2,500 输出 token，搜一两次网，输入大头在核查那一步。`LANG_UI=zh npm run live` 用中文界面跑。
+
+```bash
 npm run e2e
 ```
 
@@ -208,7 +214,8 @@ npm run motion
 
 **还没验证的。**
 
-- 语音转写已经用阿里云百炼真实跑过（`qwen3-asr-flash`，`STT_PROVIDER=dashscope`）：一段 44 秒的口述、一句语音回答、一句语音修改，走完了整个后端。经 OpenRouter 的转写，以及所有 Claude 调用（经 OpenRouter 或 Anthropic），是按服务商文档的格式写的，还没有真实跑过：写作的几步目前只用模拟 AI 跑通，提示词还没有用真实录音调过。
+- 语音转写已经用阿里云百炼真实跑过（`qwen3-asr-flash`，`STT_PROVIDER=dashscope`）：一段 44 秒的口述、一句语音回答、一句语音修改，走完了整个后端。经 OpenRouter 的转写还没有跑过。
+- 写作已经直连 Anthropic API 真实跑过（`ANTHROPIC_API_KEY`）：整理、改稿和回答用 Claude Opus 5.5，核查用 Claude Sonnet 5.5 加网页搜索，成文用 Claude Opus 5.5 加结构化输出，并打开了服务端兜底（server-side fallback）。`npm run live` 把一篇文章从头到尾走一遍，中英文界面都跑过。不过这几次用的素材都是那段关于待办清单的口述（真实录音转写出来的原文），没有用新的录音，所以提示词只在这一份素材上检查过。经 OpenRouter 调用 Claude 还没有跑过：那边的密钥没有额度了。
 - 只在 Even Hub 模拟器里跑过，没有上过 G2 真机。蓝牙下重建页面的快慢、麦克风的音量、手机锁屏时的表现，都要真机才能确认。
 - 「发到 Notion」按 Notion 文档的接口实现，Markdown 的转换有测试，但没有对着真实的工作区跑过。
 
