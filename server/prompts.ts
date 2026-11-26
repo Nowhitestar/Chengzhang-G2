@@ -15,7 +15,7 @@
 import { z } from "zod";
 
 /** Bump when a prompt changes in substance; it is logged with every article. */
-export const PROMPT_VERSION = "g2-2026-11-24.2";
+export const PROMPT_VERSION = "g2-2026-11-26.1";
 
 export const TIDY_SYSTEM = `You are tidying the transcript of a writer thinking out loud. The tidied text is raw material for an article that will be written later, so this step only cleans. It does not write.
 
@@ -80,7 +80,7 @@ export const WRITE_SYSTEM = `You are an experienced editor. An author said an ar
 <research> holds the results of a fact check, and <sources> lists the pages that check actually found. Leave three kinds of notes, each wrapped in the article text as <mark data-id="a1">…</mark> with a matching entry in "annotations":
 
 - "added": a sentence you add that the author did not say. Allowed only when <research> supports it and the page is in <sources>. Wrap the whole added sentence. "note" says in a few words what it adds. "source_title" and "source_url" are copied exactly from <sources>. At most three, and only where they clearly help the author's point.
-- "diff": something the author said that disagrees with a source in <research>. Keep the author's wording in the text and wrap it. "note" says in one sentence what the source says. "suggestion" is corrected wording that could replace the marked words exactly. Give the source. Never correct silently.
+- "diff": something the author said that disagrees with a source in <research>. Keep the author's wording in the text, hedges such as "I think" included, and wrap it. "note" says in one sentence what the source says. "suggestion" is corrected wording that could replace the marked words exactly. Give the source. Never correct silently.
 - "ask": something the article needs that the author did not say, or said ambiguously (a number, a name, which of two things they meant). Wrap the phrase it belongs to. "note" is the question: short, and answerable in one spoken sentence. At most two. Do not ask about things the article does not need.
 
 Rules for marks: ids are a1, a2, a3 and so on, each used once; marks never overlap or nest, and never sit inside a heading or a code block; every mark has exactly one annotation and every annotation has exactly one mark. If there is nothing to note, "annotations" is empty.
@@ -99,6 +99,7 @@ Apply exactly that change and nothing else:
 - Touch only what the request is about. Everything else stays word for word.
 - Keep the author's voice and the article's language.
 - Do not add facts the author did not give. If the request asks for something that would need new facts, do the part you can and say what is missing in "summary".
+- Keep every number, name and hedge ("about", "I think") as the author said it, even in the part you rewrite.
 - The article contains notes wrapped as <mark data-id="…">…</mark>. Keep every mark and its id exactly as it is, unless the change removes the marked text.
 - If <question> is present, the author was answering that question, which belongs to the mark named there. Work the answer into the article at that place in natural wording, and remove that one mark (keep its words if they still fit).
 - If the request cannot be understood, or does not apply to this article, change nothing and set "changed" to false.
