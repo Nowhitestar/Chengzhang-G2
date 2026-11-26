@@ -210,7 +210,7 @@ Details in [PRIVACY.md](PRIVACY.md).
 
 **What existed before November 23.** Chengzhang itself: the product idea, the name and mark, the paper-and-ink look and the rules listed above, which belong to an existing web app whose code is private and not in this repository. Everything here (the G2 app, the backend, the prompts, the tests) was written during the hackathon and shares no code with the web app. It uses the same model providers.
 
-**The demo video.** One continuous run in the Even Hub simulator, with the phone page filmed at its real frame rate. What is said to the glasses is really transcribed (Qwen ASR); the writing is simulated in that recording, because there was no Claude credit where it was recorded, and the video says so on every frame. The voice-over and the spoken takes are the author's own voice, cloned and synthesised; the music is original. The script is in [docs/SUBMISSION.md](docs/SUBMISSION.md).
+**The demo video.** One continuous run in the Even Hub simulator, with the phone page filmed at its real frame rate. What is said to the glasses is really transcribed (Qwen ASR); the writing is simulated in that recording, because there was no Claude key where it was recorded, and the video says so on every frame. The writing has since been run for real (see below and `npm run live`). The voice-over and the spoken takes are the author's own voice, cloned and synthesised; the music is original. The script is in [docs/SUBMISSION.md](docs/SUBMISSION.md).
 
 **Not verified yet.**
 
