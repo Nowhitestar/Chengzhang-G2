@@ -55,6 +55,15 @@ export const config = {
     audioMinutesPerDay: num(env.MAX_AUDIO_MINUTES_PER_DAY, 60),
     composesPerDay: num(env.MAX_COMPOSES_PER_DAY, 20),
     editsPerDay: num(env.MAX_EDITS_PER_DAY, 60),
+    /**
+     * Ceilings for the whole server, all devices together, so a public demo cannot run up a bill
+     * however many devices it is opened from. 0 means no ceiling.
+     */
+    server: {
+      audioMinutesPerDay: num(env.MAX_SERVER_AUDIO_MINUTES_PER_DAY, 0),
+      composesPerDay: num(env.MAX_SERVER_COMPOSES_PER_DAY, 0),
+      editsPerDay: num(env.MAX_SERVER_EDITS_PER_DAY, 0),
+    },
   },
   notion: {
     token: env.NOTION_TOKEN || "",

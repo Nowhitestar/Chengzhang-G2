@@ -133,6 +133,25 @@ export function createApp(): Hono<Env> {
     return c.json({ ok: true });
   });
 
+  /** Over today's ceiling, for this device or for the whole server? The message says which. */
+  const overLimit = (userId: string, kind: "audio" | "composes" | "edits", t: T): string => {
+    const mine = store.usageToday(userId);
+    const all = store.usageTodayAll();
+    const cap = config.limits;
+    const over = {
+      audio: [mine.audio_ms >= cap.audioMinutesPerDay * 60_000, cap.server.audioMinutesPerDay > 0 && all.audio_ms >= cap.server.audioMinutesPerDay * 60_000],
+      composes: [mine.composes >= cap.composesPerDay, cap.server.composesPerDay > 0 && all.composes >= cap.server.composesPerDay],
+      edits: [mine.edits >= cap.editsPerDay, cap.server.editsPerDay > 0 && all.edits >= cap.server.editsPerDay],
+    }[kind];
+    if (over[1]) return t("这个服务今天的用量到上限了，明天再来。", "This server has reached today’s limit for everyone. Come back tomorrow.");
+    if (!over[0]) return "";
+    return {
+      audio: t("今天讲得够多了，明天再来。", "That’s the daily limit for talking. Come back tomorrow."),
+      composes: t("今天写得够多了，明天再来。", "That’s the daily limit for articles. Come back tomorrow."),
+      edits: t("今天改得够多了，明天再来。", "That’s the daily limit for changes. Come back tomorrow."),
+    }[kind];
+  };
+
   app.post("/api/articles/:id/recordings", async (c) => {
     const a = article(c);
     if (!a) return notFound(c);
@@ -142,13 +161,8 @@ export function createApp(): Hono<Env> {
     if (purpose !== "material" && a.status !== "ready") {
       return c.json({ error: t("这篇还没写好。", "This article isn’t written yet."), code: "not_ready" }, 409);
     }
-    const used = store.usageToday(a.user_id);
-    if (used.audio_ms >= config.limits.audioMinutesPerDay * 60_000) {
-      return c.json({ error: t("今天讲得够多了，明天再来。", "That’s the daily limit for talking. Come back tomorrow."), code: "limit" }, 429);
-    }
-    if (purpose !== "material" && used.edits >= config.limits.editsPerDay) {
-      return c.json({ error: t("今天改得够多了，明天再来。", "That’s the daily limit for changes. Come back tomorrow."), code: "limit" }, 429);
-    }
+    const limit = overLimit(a.user_id, "audio", t) || (purpose !== "material" ? overLimit(a.user_id, "edits", t) : "");
+    if (limit) return c.json({ error: limit, code: "limit" }, 429);
     return c.json({ id: store.createRecording(a.id, a.user_id, purpose, (body.target || "").slice(0, 40)) });
   });
 
@@ -198,9 +212,8 @@ export function createApp(): Hono<Env> {
     if (!store.materialOf(a.id).length) {
       return c.json({ error: t("还没有可以写的内容。先讲一段。", "There’s nothing to write from yet. Say something first."), code: "empty" }, 409);
     }
-    if (store.usageToday(a.user_id).composes >= config.limits.composesPerDay) {
-      return c.json({ error: t("今天写得够多了，明天再来。", "That’s the daily limit for articles. Come back tomorrow."), code: "limit" }, 429);
-    }
+    const limit = overLimit(a.user_id, "composes", t);
+    if (limit) return c.json({ error: limit, code: "limit" }, 429);
     store.addUsage(a.user_id, "composes", 1);
     pipeline.startCompose(a.id);
     return c.json({ ok: true });
@@ -214,9 +227,8 @@ export function createApp(): Hono<Env> {
     const body = (await c.req.json().catch(() => ({}))) as { instruction?: string };
     const instruction = (body.instruction || "").trim().slice(0, 2000);
     if (a.status !== "ready" || a.revising || !instruction) return c.json({ error: t("现在改不了。", "Can’t change it right now."), code: "busy" }, 409);
-    if (store.usageToday(a.user_id).edits >= config.limits.editsPerDay) {
-      return c.json({ error: t("今天改得够多了，明天再来。", "That’s the daily limit for changes. Come back tomorrow."), code: "limit" }, 429);
-    }
+    const limit = overLimit(a.user_id, "edits", t);
+    if (limit) return c.json({ error: limit, code: "limit" }, 429);
     store.addUsage(a.user_id, "edits", 1);
     void pipeline.applySpokenChange(a.id, instruction, "");
     return c.json({ ok: true });

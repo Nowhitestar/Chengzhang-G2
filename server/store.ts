@@ -346,6 +346,15 @@ export function usageToday(userId: string): Usage {
   return one<Usage>("SELECT audio_ms, composes, edits FROM usage WHERE user_id = ? AND day = ?", userId, today()) ?? { audio_ms: 0, composes: 0, edits: 0 };
 }
 
+/** Today's use by every device together. */
+export function usageTodayAll(): Usage {
+  const sum = one<Usage>(
+    "SELECT COALESCE(SUM(audio_ms), 0) AS audio_ms, COALESCE(SUM(composes), 0) AS composes, COALESCE(SUM(edits), 0) AS edits FROM usage WHERE day = ?",
+    today(),
+  );
+  return sum ?? { audio_ms: 0, composes: 0, edits: 0 };
+}
+
 export function addUsage(userId: string, field: keyof Usage, amount: number): void {
   run(
     `INSERT INTO usage (user_id, day, ${field}) VALUES (?, ?, ?)

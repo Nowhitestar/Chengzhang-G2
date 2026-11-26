@@ -152,3 +152,28 @@ test("oversized requests are refused", async () => {
   assert.equal((await c.call("PUT", `/api/recordings/${rec}/chunks/0`, new Uint8Array(1_600_000))).status, 413);
   assert.equal((await c.call("PUT", `/api/recordings/${rec}/chunks/0`, new Uint8Array(640_000))).status, 200);
 });
+
+test("a whole-server ceiling stops every device once reached, and says so", async () => {
+  const { config } = await import("../server/config.ts");
+  const before = config.limits.server.composesPerDay;
+  config.limits.server.composesPerDay = 1;
+  try {
+    const first = await newClient();
+    const a = (await first.call<{ id: string }>("POST", "/api/articles")).data.id;
+    await first.say(a, 4);
+    await first.until(a, (x) => x.recordings[0]?.status === "ready");
+    assert.equal((await first.call("POST", `/api/articles/${a}/compose`)).status, 200);
+
+    // Another device, same day: its own count is zero, but the server's is not.
+    const second = await newClient("en", { keepData: true });
+    const b = (await second.call<{ id: string }>("POST", "/api/articles")).data.id;
+    await second.say(b, 4);
+    await second.until(b, (x) => x.recordings[0]?.status === "ready");
+    const refused = await second.call<{ error: string; code: string }>("POST", `/api/articles/${b}/compose`);
+    assert.equal(refused.status, 429);
+    assert.equal(refused.data.code, "limit");
+    assert.match(refused.data.error, /limit for everyone/);
+  } finally {
+    config.limits.server.composesPerDay = before;
+  }
+});

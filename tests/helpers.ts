@@ -26,8 +26,9 @@ export interface Client {
   say: (articleId: string, seconds: number, purpose?: string, target?: string) => Promise<string>;
 }
 
-export async function newClient(lang = "en"): Promise<Client> {
-  resetDbForTests();
+/** A new device. Each starts from an empty database unless `keepData` is set (a second device on the same server). */
+export async function newClient(lang = "en", opts: { keepData?: boolean } = {}): Promise<Client> {
+  if (!opts.keepData) resetDbForTests();
   const app = createApp() as Hono<any>;
   let token = "";
   const call: Client["call"] = async (method, path, body) => {
