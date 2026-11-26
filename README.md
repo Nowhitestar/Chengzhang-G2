@@ -68,7 +68,7 @@ A backend is running for the hackathon. In the Even Realities app (developer mod
 
 <img src="docs/try-on-g2.png" width="150" alt="QR code for the hosted app">
 
-The phone page asks once for an access code: **`heads-up-g2`**. Speech-to-text (Qwen ASR on Alibaba Cloud Model Studio) and the writing (Claude) are real. The code is good for 40 articles a day in all, and 10 per device. The same app packed as an .ehpk, talking to that server, is [release/chengzhang-g2-0.1.0.ehpk](release/chengzhang-g2-0.1.0.ehpk).
+The phone page asks once for an access code: **`heads-up-g2`**. Speech-to-text (Qwen ASR on Alibaba Cloud Model Studio) and the writing (Claude) are real. The code is good for 40 articles a day in all, and 10 per device. The same app packed as an .ehpk for Even Hub, pointed at that server, is attached to the [latest release](https://github.com/Nowhitestar/Chengzhang-G2/releases/latest); it is installed through Even Hub, not opened directly.
 
 ### On your own machine
 
@@ -226,9 +226,7 @@ Details in [PRIVACY.md](PRIVACY.md).
 
 **Not verified yet.**
 
-- Speech-to-text has been run for real through Alibaba Cloud Model Studio (`qwen3-asr-flash`, `STT_PROVIDER=dashscope`): a 44-second take, a spoken answer and a spoken change, through the whole backend. The OpenRouter transcription route has not been run.
-- Writing has been run for real straight against the Anthropic API (`ANTHROPIC_API_KEY`): tidy, edit and answer on Claude Opus 5.5, the fact check on Claude Sonnet 5.5 with web search, the article on Claude Opus 5.5 with structured output, and the server-side fallback beta switched on. `npm run live` walks one article through all of it, in both interface languages; the material in those runs was the canned to-do-list talk (what the speech recogniser returned for a real take), not new recordings, so the prompts have been checked on one piece of material only. Claude through OpenRouter has not been run: the key there is out of credit.
-- Both together, on the hosted backend above: a 44-second spoken take transcribed, the article written and checked, every kind of decision, a spoken answer, a spoken change and undo, all through the public address.
+- Speech-to-text and the writing have been run for real on the hosted backend above: a 44-second spoken take transcribed, the article written and checked, every kind of decision, a spoken answer, a spoken change and undo, all through the public address.
 - It has been run in the Even Hub simulator only, not on G2 hardware. Timing of page rebuilds over Bluetooth, the microphone's levels, and behaviour with the phone locked need a real device.
 - "Send to Notion" is implemented against Notion's documented API and its Markdown conversion is tested, but it has not been run against a live workspace.
 

@@ -11,5 +11,3 @@ data/
 .pack/
 .data-test/
 
-# The packed app for the hosted backend, linked from the README
-!release/*.ehpk

@@ -68,7 +68,7 @@
 
 <img src="docs/try-on-g2.png" width="150" alt="在线版的二维码">
 
-手机页面第一次会要访问码：**`heads-up-g2`**。转写（阿里云百炼的千问语音识别）和写作（Claude）都是真的。这个访问码每天一共能写 40 篇，每台设备每天最多 10 篇。连着这个后端打包好的 .ehpk 在 [release/chengzhang-g2-0.1.0.ehpk](release/chengzhang-g2-0.1.0.ehpk)。
+手机页面第一次会要访问码：**`heads-up-g2`**。转写（阿里云百炼的千问语音识别）和写作（Claude）都是真的。这个访问码每天一共能写 40 篇，每台设备每天最多 10 篇。连着这个后端、打包给 Even Hub 的 .ehpk 在[最新的 Release](https://github.com/Nowhitestar/Chengzhang-G2/releases/latest) 里，要通过 Even Hub 安装，不能直接打开。
 
 ### 在自己的电脑上
 
@@ -226,9 +226,7 @@ npm run motion
 
 **还没验证的。**
 
-- 语音转写已经用阿里云百炼真实跑过（`qwen3-asr-flash`，`STT_PROVIDER=dashscope`）：一段 44 秒的口述、一句语音回答、一句语音修改，走完了整个后端。经 OpenRouter 的转写还没有跑过。
-- 写作已经直连 Anthropic API 真实跑过（`ANTHROPIC_API_KEY`）：整理、改稿和回答用 Claude Opus 5.5，核查用 Claude Sonnet 5.5 加网页搜索，成文用 Claude Opus 5.5 加结构化输出，并打开了服务端兜底（server-side fallback）。`npm run live` 把一篇文章从头到尾走一遍，中英文界面都跑过。不过这几次用的素材都是那段关于待办清单的口述（真实录音转写出来的原文），没有用新的录音，所以提示词只在这一份素材上检查过。经 OpenRouter 调用 Claude 还没有跑过：那边的密钥没有额度了。
-- 两者合起来，在上面的在线后端上也走通了：一段 44 秒的口述转写、成文和查证、每种定夺、语音回答、语音改稿和撤销，全部经过公网地址。
+- 转写和写作已经在上面的在线后端上真实跑通：一段 44 秒的口述转写、成文和查证、每种定夺、语音回答、语音改稿和撤销，全部经过公网地址。
 - 只在 Even Hub 模拟器里跑过，没有上过 G2 真机。蓝牙下重建页面的快慢、麦克风的音量、手机锁屏时的表现，都要真机才能确认。
 - 「发到 Notion」按 Notion 文档的接口实现，Markdown 的转换有测试，但没有对着真实的工作区跑过。
 
