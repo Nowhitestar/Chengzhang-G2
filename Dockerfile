@@ -8,6 +8,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 ENV NODE_ENV=production PORT=8787 DATA_DIR=/app/data
-VOLUME /app/data
+# Keep /app/data on a volume: `docker run -v …` as above, or a volume mounted there by your host
+# (Railway, Fly and the like do not accept a VOLUME line, so there is none here).
 EXPOSE 8787
 CMD ["npm", "start"]
