@@ -1,56 +1,88 @@
-# Submission notes
+# Submission
 
-Text for the DoraHacks submission, and what the demo video shows. Everything here describes what is in this repository.
+The description below is what goes into the DoraHacks "Describe your Build" field, as Markdown. The screenshots load from this repository, so it has to be public.
 
-## Short description
+---
 
-**Chengzhang for Even G2: talk an article into existence, then settle the AI's notes with a tap.**
+# Chengzhang for Even G2
 
-**The problem.** Ideas arrive when your hands are busy: walking, leaving a meeting, cooking. Typing them later loses them; dictation apps hand you a wall of raw transcript you still have to turn into something.
+**Think it, say it.** Talk an article into existence on your glasses, then settle the AI's notes with a tap.
 
-**Who it is for.** People who write for work or in public (posts, memos, newsletters, documentation) and think better out loud than at a blank page.
+https://youtu.be/p6uaDYp3txk
 
-**How it works.** Tap the temple and think out loud. The glasses show ink, not words, so you keep thinking instead of editing. When you say "write it up", Claude turns the talking into a draft in your voice and checks the checkable claims on the web. A minute or two later the glasses show the title and one line saying what the article says, plus a short list only you can settle: a sentence the AI added (with its source) to keep or remove, a claim that disagrees with a source to keep or correct, a question to answer out loud. Press and hold to say a change ("make the opening more direct"); undo is one tap away. The finished article is on the phone, typeset, ready to copy as Markdown or send to Notion.
+**Track 04 · AI Assistants & Work** · Code: [github.com/Nowhitestar/Chengzhang-G2](https://github.com/Nowhitestar/Chengzhang-G2) · Try it on G2: scan the QR code in the README with the Even Realities app (developer mode), access code `heads-up-g2`
 
-**What makes it a G2 app.** One thing on screen at a time and a few words. Reading is a glance (title and gist); writing back is a tap, the ring, or one spoken sentence. The first item in every list is the safe default. The microphone is on only while you are talking.
+## The problem
 
-**Track.** 04, AI Assistants & Work. Core integration: Claude, through the Anthropic API or OpenRouter (tidying transcripts, web fact-checking, structured-output writing, editing from a spoken instruction). Speech-to-text is Qwen ASR, through OpenRouter or Alibaba Cloud Model Studio. Notion is the optional destination.
+Good ideas show up when your hands are busy: on a walk, on the way out of a meeting, while cooking. By the time you are at a keyboard they have gone flat. Voice notes and dictation do not fix that. They hand you a wall of raw transcript that you still have to turn into something, and a live transcript on screen makes you stop and fix words instead of thinking.
 
-**Business model.** Chengzhang is already a product (chengzhang.ink) with no subscription: people top up credits and pay as they go, priced from the real model cost. The glasses edition is sold on the same credits. Next: sign the glasses in with a Chengzhang account, so they share the balance and the finished piece opens in the web app for longer editing and publishing.
+## How it works
 
-**Try it on G2.** Scan the QR code in the README with the Even Realities app (developer mode), or open https://chengzhang-g2-production.up.railway.app; access code `heads-up-g2`. Real speech-to-text and real Claude; the code is good for 40 articles a day in all, and 10 per device. The app packed for Even Hub is attached to the repository's latest release (https://github.com/Nowhitestar/Chengzhang-G2/releases/latest).
+Tap the temple and think out loud. The glasses show a clock and strokes of ink, never words. When you say "write it up", Claude turns the talking into an article in your voice and checks the checkable claims on the web. Then the glasses show the title, one line saying what the article says, and a short list of things only you can decide, each settled with a tap or one spoken sentence.
 
-**Careful with data.** No accounts; a random device token. Audio is deleted once transcribed. An AI-added sentence is deleted by the backend unless its source is a page the fact check actually returned. Nothing you said is changed without you choosing it. No keys in the app.
+![While you talk: a clock and ink, no words](https://raw.githubusercontent.com/Nowhitestar/Chengzhang-G2/main/docs/screens/en/talking.png)
+![Ready: the title, what it says, three notes waiting](https://raw.githubusercontent.com/Nowhitestar/Chengzhang-G2/main/docs/screens/en/ready.png)
 
-## The demo video
+Under the hood:
 
-About two and a half minutes, 1920 × 1080 at 60 frames a second. One continuous run of the app in the Even Hub simulator: the glasses display on the left, the phone page on the right, filmed at its real frame rate so the way it moves can be seen. The middle of the spoken take is fast-forwarded and labelled.
+- **The glasses.** The app is a web app inside the Even Realities app, talking to the glasses through the Even Hub SDK. The glasses do not render HTML, so every screen is a few text and list containers on the 576 × 288 display. Text is measured with the firmware's own glyph widths before it is sent, so nothing overflows, and only what changed is updated, in place.
+- **Listening.** Raw 16 kHz audio from the glasses' microphone is cut at pauses into slices of about 15 seconds and uploaded while you are still talking, so most of it is transcribed by the time you tap "done".
+- **Writing.** The backend tidies each recording, fact-checks with Claude's web search, and writes the article with structured output: a title, a one-line gist, the text, and the notes anchored to the sentences they are about. A spoken change or a spoken answer is one more Claude call.
+- **Rules kept in code, not only in the prompt.** The article says what you said. A sentence the AI adds must cite a page the fact check actually returned, or the backend deletes it. A claim that disagrees with a source is flagged, never corrected silently. Every change can be undone.
 
-What is real in it, and what is not (the video says the same on screen, on every frame):
+## Key features
 
-- **Speech-to-text is real.** What is said to the glasses goes through the simulator's microphone to the backend and is transcribed by Qwen ASR (Alibaba Cloud Model Studio). The words on the "What you said" screen are what the recogniser returned.
-- **The writing is simulated in this recording.** There was no Claude key where it was recorded, so the article, its three notes and the two edits come from the demo writer (`server/mock.ts`). The writing has since been run for real against the Anthropic API: `npm run live` walks one article through tidying, the web fact check, writing, every kind of decision, a spoken answer, a spoken change and undo on Claude Opus 5.5 and Sonnet 5.5. Writing an article takes about 20 seconds.
-- **The voice is the author's own, cloned and synthesised**, both the narration and what is said to the glasses. The music is original, generated by a script. Both are said on the title and end cards.
+- **Capture with your hands full.** Tap, talk, tap. Pauses and changes of mind are fine; there is nothing on screen to go back and fix.
+- **Read at a glance.** Title and gist on the glasses; the whole article a page at a time when you want it.
+- **Write back with a tap or a sentence.**
+  - A sentence the AI added, with its source: keep it or remove it.
+  - Something you said that disagrees with a source: leave it as you said, or use the correction.
+  - A question only you can answer: answer it out loud.
+  - Press and hold to say a change ("make the opening more direct"). You see what was heard and what was done, and Undo is the next item.
+- **The finished piece on your phone.** A paper-and-ink companion page shows what the glasses are doing and the typeset article with the AI's additions highlighted. Copy it as Markdown, or send it to Notion.
+- **English and Chinese**, light and dark, phone and wide screens.
+- **Careful with data.** No accounts on the glasses: a random device token. Audio is deleted as soon as it is transcribed. No keys in the app. Daily limits per device and per access code.
 
-| Scene | On screen | Narration |
-|---|---|---|
-| Opening page, tap | "Think it, say it." | "So, my best ideas always show up when my hands are busy. You know, walking, cooking. So now, I just tap my glasses, and talk." |
-| Talking | A clock and ink; no words. The take is heard, then fast-forwarded | "And look, there's no transcript on the screen. Just ink. So I don't stop to fix words. I just keep thinking." |
-| What you said | The real transcript, tidied | "When I'm done, it tidies up what I said. All the ums are gone. And it won't write a thing until I tell it to." |
-| Writing | Checking the facts, writing it up | "Then Claude checks the facts on the web, and writes it up, in my voice. That takes a minute or two. So, honestly? I just walk away." |
-| Ready | Title, one line, three notes; the article on the phone | "And when I look again, there it is. A title, one line about what it says, and three notes, waiting for me." |
-| Check this | The claim and what the source says; the correction is chosen | "First one. I said one thing, and the source says another. But it didn't just change it. It asked me. So, okay, I'll take the correction." |
-| AI added | The added sentence and its source; kept | "This one, the AI added a sentence. But it shows me exactly where it came from. So, I'll keep it. One tap." |
-| A question | Answered out loud: "Um, about six months." A few seconds later the answer is in the article | "And then it asks me something only I would know. So, I just answer." … "And a few seconds later, it's right there, in the article." |
-| Read it | Two pages on the glasses; the phone follows | "Now I can read the whole thing, right here. A page at a time." |
-| Say a change | Press and hold: "Make the opening more direct." | "And if something sounds off? I press and hold, and just say it." |
-| Changed | What was heard, what was done, Undo next in the list | "It shows me what it heard, and what it changed. And if I don't like it, well, undo is right there." |
-| The phone | The finished article; Copy pressed, "Copied" | "And the finished piece is already on my phone. Ready to copy." |
-| End card | | "So, yeah. From a thought, to a draft I actually signed off on. And my phone never left my pocket. This is Chengzhang, for Even G2." |
+![AI added: the sentence, its source, keep or remove](https://raw.githubusercontent.com/Nowhitestar/Chengzhang-G2/main/docs/screens/en/note-added.png)
+
+## Tech stack
+
+| | |
+|---|---|
+| Glasses app | TypeScript, Vite, Even Hub SDK, `@evenrealities/pretext` for measuring text |
+| AI | Claude Opus 5.5 (tidying, writing with structured output, edits) and Claude Sonnet 5.5 with web search (fact check), through the Anthropic API or OpenRouter |
+| Speech-to-text | Qwen3-ASR, through Alibaba Cloud Model Studio or OpenRouter |
+| Backend | Node.js 22, Hono, Node's built-in SQLite |
+| Integrations | Notion API ("Send to Notion", optional) |
+| Hosting | Docker on Railway |
+| Testing | 36 unit and API tests run in memory; every screen walked in the Even Hub simulator through its automation API; the phone page's motion measured with Playwright; `npm run live` sends one article through real Claude |
+
+## Hackathon requirements
+
+- **Track and integration.** Track 04, AI Assistants & Work. The core integration is Claude; Notion is the optional destination for the finished article.
+- **Public repository with setup.** [github.com/Nowhitestar/Chengzhang-G2](https://github.com/Nowhitestar/Chengzhang-G2). With no keys it runs in demo mode, so the whole flow can be tried in the Even Hub simulator with `npm install`, `npm run dev` and `npm run sim`.
+- **Demo video (2:32).** One continuous run in the Even Hub simulator. In that recording the speech-to-text is real and the writing is simulated, which the video says on every frame; the writing has since run for real on Claude, on the hosted backend. The voice is the author's own, cloned and synthesised, and the music is original.
+- **Try it on G2.** A hosted backend runs real speech-to-text and real Claude: scan the QR code in the README with the Even Realities app (developer mode), access code `heads-up-g2`. The same app packed as an .ehpk for Even Hub is attached to the [latest release](https://github.com/Nowhitestar/Chengzhang-G2/releases/latest).
+- **What existed before November 23.** Chengzhang itself: an existing writing product ([chengzhang.ink](https://chengzhang.ink)), with its idea, name, mark, paper-and-ink look and the rules above. Its web app's code is private and is not in this repository. Everything here (the G2 app, the backend, the prompts, the tests) was written during the build week.
+- **No API keys** in the repository or in the app.
+- **Tested in the simulator only.** It has not run on G2 hardware yet.
+
+## Business model
+
+Chengzhang is a live product with no subscription: people top up credits and pay as they go. The glasses edition runs on the same credits. Next, the glasses sign in with a Chengzhang account, so they share its balance and the finished piece opens in the web app for longer editing and publishing.
+
+---
+
+## About the demo video
+
+What is real in it, and what is not (the video says the same on screen):
+
+- **Speech-to-text is real.** What is said to the glasses goes through the simulator's microphone to the backend and is transcribed by Qwen ASR (Alibaba Cloud Model Studio).
+- **The writing is simulated in this recording.** There was no Claude key where it was recorded, so the article, its three notes and the two edits come from the demo writer (`server/mock.ts`). The writing has since been run for real: `npm run live`, and the hosted backend.
+- **The voice is the author's own, cloned and synthesised**, both the narration and what is said to the glasses. The music is original, generated by a script.
 
 ## Checklist before submitting
 
-- [ ] Upload the video and add its link on DoraHacks and at the top of the README.
-- [ ] If you get Claude credit before the deadline: set `OPENROUTER_API_KEY` or `ANTHROPIC_API_KEY`, run the flow once for real, and remove the matching "not verified yet" line in the README.
-- [ ] Optional: deploy the backend, then `API_ORIGIN=https://… npm run pack` and attach the `.ehpk`.
-- [ ] The repository is public.
+- [ ] The repository is public (the screenshots above load from it).
+- [ ] The Release workflow has run once (Actions → Release → Run workflow, tag `v0.1.0`), so the latest-release link works.
+- [ ] The branches `claude/hosted-backend` and `claude/real-claude-run` are deleted.

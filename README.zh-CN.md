@@ -6,6 +6,8 @@
 
 [English](README.md) · 参加 *Heads Up: Even Realities Hackathon* · 赛道 04：AI Assistants & Work（Claude、OpenRouter、Notion）
 
+**演示视频（2:32）：** [youtu.be/p6uaDYp3txk](https://youtu.be/p6uaDYp3txk)
+
 | 眼镜上 | 手机上 |
 |---|---|
 | <img src="docs/screens/zh/talking.png" width="380" alt="讲的时候眼镜上只有时间和墨痕，不出字"> | <img src="docs/screens/zh/ready-phone.png" width="250" alt="手机上排好版的文章，AI 补充的句子是亮色"> |

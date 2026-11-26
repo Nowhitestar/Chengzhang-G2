@@ -6,6 +6,8 @@
 
 [中文说明](README.zh-CN.md) · Built for *Heads Up: Even Realities Hackathon* · Track 04, AI Assistants & Work (Claude, OpenRouter, Notion)
 
+**Demo video (2:32):** [youtu.be/p6uaDYp3txk](https://youtu.be/p6uaDYp3txk)
+
 | On the glasses | On the phone |
 |---|---|
 | <img src="docs/screens/en/talking.png" width="380" alt="While you talk the glasses show a clock and strokes of ink, no words"> | <img src="docs/screens/en/ready-phone.png" width="250" alt="The finished article on the phone, with the AI's addition highlighted"> |
