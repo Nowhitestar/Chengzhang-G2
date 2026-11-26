@@ -28,5 +28,5 @@ serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`[chengzhang] listening on :${info.port}`);
   console.log(`[chengzhang] writing: ${writing} · transcription: ${hearing} · notion: ${notionReady() ? "on" : "off"}`);
   if (config.demo) console.log("[chengzhang] demo mode: set OPENROUTER_API_KEY (or ANTHROPIC_API_KEY) for the real thing");
-  if (!config.accessCode) console.log("[chengzhang] no ACCESS_CODE set: any device that can reach this server can use it");
+  if (!config.accessCodes.size) console.log("[chengzhang] no ACCESS_CODE set: any device that can reach this server can use it");
 });

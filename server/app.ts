@@ -61,7 +61,7 @@ export function createApp(): Hono<Env> {
   });
 
   app.get("/api/health", (c) =>
-    c.json({ ok: true, mode: config.demo ? "demo" : "live", accessCode: Boolean(config.accessCode), prompts: PROMPT_VERSION }),
+    c.json({ ok: true, mode: config.demo ? "demo" : "live", accessCode: config.accessCodes.size > 0, prompts: PROMPT_VERSION }),
   );
 
   /** A device introduces itself once. With ACCESS_CODE set it must also know the code. */
@@ -69,9 +69,10 @@ export function createApp(): Hono<Env> {
     const body = (await c.req.json().catch(() => ({}))) as { code?: string; lang?: string };
     const lang: Lang = isLang(body.lang) ? body.lang : "en";
     const t = makeT(lang);
-    if (config.accessCode && (body.code || "").trim() !== config.accessCode) {
+    const code = (body.code || "").trim();
+    if (config.accessCodes.size && !config.accessCodes.has(code)) {
       // Guessing is slowed down for everyone once there have been too many wrong codes in a row.
-      if ((body.code || "").trim() && ++wrongCodes > MAX_WRONG_CODES) {
+      if (code && ++wrongCodes > MAX_WRONG_CODES) {
         return c.json({ error: t("试的次数太多了，过十分钟再来。", "Too many wrong codes. Try again in ten minutes."), code: "limit" }, 429);
       }
       return c.json({ error: t("访问码不对。", "That access code isn’t right."), code: "access_code" }, 403);
@@ -79,7 +80,7 @@ export function createApp(): Hono<Env> {
     if (++newDevices > MAX_NEW_DEVICES) {
       return c.json({ error: t("现在不能添加新设备，稍后再试。", "No new devices can be added right now. Try again later."), code: "limit" }, 429);
     }
-    const { token } = store.createUser(lang);
+    const { token } = store.createUser(lang, config.accessCodes.size ? code : "");
     return c.json({ token, features: features() });
   });
 
@@ -133,18 +134,18 @@ export function createApp(): Hono<Env> {
     return c.json({ ok: true });
   });
 
-  /** Over today's ceiling, for this device or for the whole server? The message says which. */
-  const overLimit = (userId: string, kind: "audio" | "composes" | "edits", t: T): string => {
-    const mine = store.usageToday(userId);
-    const all = store.usageTodayAll();
+  /** Over today's limit, for this device, or for the access code it came in with? The message says which. */
+  const overLimit = (user: store.User, kind: "audio" | "composes" | "edits", t: T): string => {
+    const mine = store.usageToday(user.id);
     const cap = config.limits;
-    const over = {
-      audio: [mine.audio_ms >= cap.audioMinutesPerDay * 60_000, cap.server.audioMinutesPerDay > 0 && all.audio_ms >= cap.server.audioMinutesPerDay * 60_000],
-      composes: [mine.composes >= cap.composesPerDay, cap.server.composesPerDay > 0 && all.composes >= cap.server.composesPerDay],
-      edits: [mine.edits >= cap.editsPerDay, cap.server.editsPerDay > 0 && all.edits >= cap.server.editsPerDay],
-    }[kind];
-    if (over[1]) return t("这个服务今天的用量到上限了，明天再来。", "This server has reached today’s limit for everyone. Come back tomorrow.");
-    if (!over[0]) return "";
+    if (kind === "composes") {
+      const allowance = config.accessCodes.get(user.access_code) ?? 0;
+      if (allowance > 0 && store.usageTodayByCode(user.access_code).composes >= allowance) {
+        return t("这个访问码今天能写的篇数用完了，明天再来。", "This access code has written all it can for today. Come back tomorrow.");
+      }
+    }
+    const over = { audio: mine.audio_ms >= cap.audioMinutesPerDay * 60_000, composes: mine.composes >= cap.composesPerDay, edits: mine.edits >= cap.editsPerDay }[kind];
+    if (!over) return "";
     return {
       audio: t("今天讲得够多了，明天再来。", "That’s the daily limit for talking. Come back tomorrow."),
       composes: t("今天写得够多了，明天再来。", "That’s the daily limit for articles. Come back tomorrow."),
@@ -161,7 +162,7 @@ export function createApp(): Hono<Env> {
     if (purpose !== "material" && a.status !== "ready") {
       return c.json({ error: t("这篇还没写好。", "This article isn’t written yet."), code: "not_ready" }, 409);
     }
-    const limit = overLimit(a.user_id, "audio", t) || (purpose !== "material" ? overLimit(a.user_id, "edits", t) : "");
+    const limit = overLimit(c.get("user"), "audio", t) || (purpose !== "material" ? overLimit(c.get("user"), "edits", t) : "");
     if (limit) return c.json({ error: limit, code: "limit" }, 429);
     return c.json({ id: store.createRecording(a.id, a.user_id, purpose, (body.target || "").slice(0, 40)) });
   });
@@ -212,7 +213,7 @@ export function createApp(): Hono<Env> {
     if (!store.materialOf(a.id).length) {
       return c.json({ error: t("还没有可以写的内容。先讲一段。", "There’s nothing to write from yet. Say something first."), code: "empty" }, 409);
     }
-    const limit = overLimit(a.user_id, "composes", t);
+    const limit = overLimit(c.get("user"), "composes", t);
     if (limit) return c.json({ error: limit, code: "limit" }, 429);
     store.addUsage(a.user_id, "composes", 1);
     pipeline.startCompose(a.id);
@@ -227,7 +228,7 @@ export function createApp(): Hono<Env> {
     const body = (await c.req.json().catch(() => ({}))) as { instruction?: string };
     const instruction = (body.instruction || "").trim().slice(0, 2000);
     if (a.status !== "ready" || a.revising || !instruction) return c.json({ error: t("现在改不了。", "Can’t change it right now."), code: "busy" }, 409);
-    const limit = overLimit(a.user_id, "edits", t);
+    const limit = overLimit(c.get("user"), "edits", t);
     if (limit) return c.json({ error: limit, code: "limit" }, 429);
     store.addUsage(a.user_id, "edits", 1);
     void pipeline.applySpokenChange(a.id, instruction, "");

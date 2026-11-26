@@ -75,6 +75,8 @@ const MIGRATIONS: string[] = [
      edits INTEGER NOT NULL DEFAULT 0,
      PRIMARY KEY (user_id, day)
    );`,
+  // The access code a device came in with, so a code's allowance can be counted.
+  `ALTER TABLE users ADD COLUMN access_code TEXT NOT NULL DEFAULT '';`,
 ];
 
 let handle: DatabaseSync | null = null;

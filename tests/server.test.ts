@@ -96,3 +96,13 @@ test("a Notion page id is accepted bare, dashed, or as the end of a page address
   assert.equal(pageId("01234567-89ab-cdef-0123-456789abcdef"), id);
   assert.equal(pageId(`https://www.notion.so/My-page-${id}?pvs=4`), id);
 });
+
+test("access codes are read with their daily allowances", async () => {
+  const { parseCodes } = await import("../server/config.ts");
+  assert.deepEqual([...parseCodes(" judges:40, friends ,talk:0,, bad code:3")], [
+    ["judges", 40],
+    ["friends", 0],
+    ["talk", 0],
+  ]);
+  assert.equal(parseCodes("").size, 0);
+});

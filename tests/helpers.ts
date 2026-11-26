@@ -27,7 +27,7 @@ export interface Client {
 }
 
 /** A new device. Each starts from an empty database unless `keepData` is set (a second device on the same server). */
-export async function newClient(lang = "en", opts: { keepData?: boolean } = {}): Promise<Client> {
+export async function newClient(lang = "en", opts: { keepData?: boolean; code?: string } = {}): Promise<Client> {
   if (!opts.keepData) resetDbForTests();
   const app = createApp() as Hono<any>;
   let token = "";
@@ -50,7 +50,7 @@ export async function newClient(lang = "en", opts: { keepData?: boolean } = {}):
     }
     return { status: res.status, data };
   };
-  token = (await call<{ token: string }>("POST", "/api/session", { lang })).data.token;
+  token = (await call<{ token: string }>("POST", "/api/session", { lang, code: opts.code })).data.token;
   const article: Client["article"] = async (id) => (await call<ArticleView>("GET", `/api/articles/${id}`)).data;
   const until: Client["until"] = async (id, done) => {
     for (let i = 0; i < 400; i++) {

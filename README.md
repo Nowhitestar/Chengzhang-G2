@@ -170,7 +170,7 @@ npm test
 npm run live
 ```
 
-One article through the backend with real Claude: tidy, fact check with web search, write, decide each note, answer by voice, a spoken change, undo. Speech-to-text is simulated; everything else is real, and it prints what came back, how long each step took and what each call used. It needs `ANTHROPIC_API_KEY` (or `OPENROUTER_API_KEY`). One run uses about 38,000 input and 2,500 output tokens and one or two web searches, most of the input in the fact check; `LANG_UI=zh npm run live` runs it with the Chinese interface.
+One article through the backend with real Claude: tidy, fact check with web search, write, decide each note, answer by voice, a spoken change, undo. Speech-to-text is simulated; everything else is real, and it prints what came back, how long each step took and what each call used. It needs `ANTHROPIC_API_KEY` (or `OPENROUTER_API_KEY`). `LANG_UI=zh npm run live` runs it with the Chinese interface.
 
 ```bash
 npm run e2e

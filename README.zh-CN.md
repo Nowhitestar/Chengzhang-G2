@@ -170,7 +170,7 @@ npm test
 npm run live
 ```
 
-用真实的 Claude 把一篇文章在后端走一遍：整理、联网核查、成文、逐条定夺、语音回答、口头改稿、撤销。只有语音转写是模拟的，其余都是真调用；每一步返回了什么、花了多久、用了多少 token，都会打印出来。需要 `ANTHROPIC_API_KEY`（或 `OPENROUTER_API_KEY`）。跑一次大约用 3.8 万输入 token、2,500 输出 token，搜一两次网，输入大头在核查那一步。`LANG_UI=zh npm run live` 用中文界面跑。
+用真实的 Claude 把一篇文章在后端走一遍：整理、联网核查、成文、逐条定夺、语音回答、口头改稿、撤销。只有语音转写是模拟的，其余都是真调用；每一步返回了什么、花了多久、用了多少 token，都会打印出来。需要 `ANTHROPIC_API_KEY`（或 `OPENROUTER_API_KEY`）。`LANG_UI=zh npm run live` 用中文界面跑。
 
 ```bash
 npm run e2e

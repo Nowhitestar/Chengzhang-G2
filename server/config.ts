@@ -6,6 +6,16 @@ const env = process.env;
 const num = (v: string | undefined, fallback: number) => (v && Number.isFinite(Number(v)) ? Number(v) : fallback);
 const origin = (v: string) => v.trim().replace(/\/+$/, "");
 
+/** "judges:40, friends" → judges with 40 articles a day, friends with no allowance of its own. */
+export function parseCodes(v: string): Map<string, number> {
+  const codes = new Map<string, number>();
+  for (const part of v.split(",")) {
+    const m = /^\s*([^:\s]+)\s*(?::\s*(\d+))?\s*$/.exec(part);
+    if (m) codes.set(m[1]!, Number(m[2] ?? 0));
+  }
+  return codes;
+}
+
 const anthropicKey = env.ANTHROPIC_API_KEY || "";
 const openrouterKey = env.OPENROUTER_API_KEY || "";
 const dashscopeKey = env.DASHSCOPE_API_KEY || "";
@@ -19,8 +29,13 @@ const mock = { llm: mockAll || env.MOCK_LLM === "1", stt: mockAll || env.MOCK_ST
 export const config = {
   port: num(env.PORT, 8787),
   dataDir: env.DATA_DIR || "data",
-  /** When set, a new device must present this code once before it gets a token. */
-  accessCode: (env.ACCESS_CODE || "").trim(),
+  /**
+   * When set, a new device must present one of these codes once before it gets a token.
+   * ACCESS_CODE is a comma-separated list; "code:40" also gives that code an allowance of
+   * 40 articles a day, shared by every device that came in with it (0 or no number: none).
+   * One code per audience (judges, friends, a talk) keeps each audience's use separate.
+   */
+  accessCodes: parseCodes(env.ACCESS_CODE || ""),
   /** Origins allowed to call the API. "*" is fine: every call needs a bearer token, never a cookie. */
   corsOrigins: (env.CORS_ORIGINS || "*").split(",").map(origin).filter(Boolean),
   /**
@@ -55,15 +70,6 @@ export const config = {
     audioMinutesPerDay: num(env.MAX_AUDIO_MINUTES_PER_DAY, 60),
     composesPerDay: num(env.MAX_COMPOSES_PER_DAY, 20),
     editsPerDay: num(env.MAX_EDITS_PER_DAY, 60),
-    /**
-     * Ceilings for the whole server, all devices together, so a public demo cannot run up a bill
-     * however many devices it is opened from. 0 means no ceiling.
-     */
-    server: {
-      audioMinutesPerDay: num(env.MAX_SERVER_AUDIO_MINUTES_PER_DAY, 0),
-      composesPerDay: num(env.MAX_SERVER_COMPOSES_PER_DAY, 0),
-      editsPerDay: num(env.MAX_SERVER_EDITS_PER_DAY, 0),
-    },
   },
   notion: {
     token: env.NOTION_TOKEN || "",

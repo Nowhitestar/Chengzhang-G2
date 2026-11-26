@@ -125,7 +125,7 @@ test("silence is not turned into words, and an empty take is thrown away", async
 test("with an access code set, a device must present it once", async () => {
   const { config } = await import("../server/config.ts");
   const c = await newClient();
-  config.accessCode = "open-sesame";
+  config.accessCodes = new Map([["open-sesame", 0]]);
   try {
     assert.equal(((await (await c.app.request("/api/health")).json()) as { accessCode: boolean }).accessCode, true);
     const post = (body: unknown) => c.app.request("/api/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -139,7 +139,7 @@ test("with an access code set, a device must present it once", async () => {
     // The device that already has a token keeps working.
     assert.equal((await c.call("GET", "/api/home")).status, 200);
   } finally {
-    config.accessCode = "";
+    config.accessCodes = new Map();
   }
 });
 
@@ -153,27 +153,31 @@ test("oversized requests are refused", async () => {
   assert.equal((await c.call("PUT", `/api/recordings/${rec}/chunks/0`, new Uint8Array(640_000))).status, 200);
 });
 
-test("a whole-server ceiling stops every device once reached, and says so", async () => {
+test("an access code's daily allowance is shared by every device that came in with it, and no other", async () => {
   const { config } = await import("../server/config.ts");
-  const before = config.limits.server.composesPerDay;
-  config.limits.server.composesPerDay = 1;
+  config.accessCodes = new Map([["judges", 1], ["friends", 0]]);
   try {
-    const first = await newClient();
-    const a = (await first.call<{ id: string }>("POST", "/api/articles")).data.id;
-    await first.say(a, 4);
-    await first.until(a, (x) => x.recordings[0]?.status === "ready");
-    assert.equal((await first.call("POST", `/api/articles/${a}/compose`)).status, 200);
+    const device = async (code: string, keepData: boolean) => {
+      const c = await newClient("en", { keepData, code });
+      const id = (await c.call<{ id: string }>("POST", "/api/articles")).data.id;
+      await c.say(id, 4);
+      await c.until(id, (x) => x.recordings[0]?.status === "ready");
+      return { c, id };
+    };
+    const first = await device("judges", false);
+    assert.equal((await first.c.call("POST", `/api/articles/${first.id}/compose`)).status, 200);
 
-    // Another device, same day: its own count is zero, but the server's is not.
-    const second = await newClient("en", { keepData: true });
-    const b = (await second.call<{ id: string }>("POST", "/api/articles")).data.id;
-    await second.say(b, 4);
-    await second.until(b, (x) => x.recordings[0]?.status === "ready");
-    const refused = await second.call<{ error: string; code: string }>("POST", `/api/articles/${b}/compose`);
+    // A second device with the same code: its own count is zero, but the code's is not.
+    const second = await device("judges", true);
+    const refused = await second.c.call<{ error: string; code: string }>("POST", `/api/articles/${second.id}/compose`);
     assert.equal(refused.status, 429);
     assert.equal(refused.data.code, "limit");
-    assert.match(refused.data.error, /limit for everyone/);
+    assert.match(refused.data.error, /access code has written all it can/);
+
+    // A device with another code is not affected.
+    const other = await device("friends", true);
+    assert.equal((await other.c.call("POST", `/api/articles/${other.id}/compose`)).status, 200);
   } finally {
-    config.limits.server.composesPerDay = before;
+    config.accessCodes = new Map();
   }
 });

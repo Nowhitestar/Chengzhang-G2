@@ -26,18 +26,20 @@ const now = () => Date.now();
 export interface User {
   id: string;
   lang: Lang;
+  /** The access code it came in with ("" when the server asked for none). */
+  access_code: string;
 }
 
 /** A device gets a random token once and keeps it. Only its hash is stored. */
-export function createUser(lang: Lang): { user: User; token: string } {
+export function createUser(lang: Lang, accessCode = ""): { user: User; token: string } {
   const id = newId();
   const token = randomBytes(32).toString("base64url");
-  run("INSERT INTO users (id, token_hash, lang, created_at) VALUES (?, ?, ?, ?)", id, hash(token), lang, now());
-  return { user: { id, lang }, token };
+  run("INSERT INTO users (id, token_hash, lang, access_code, created_at) VALUES (?, ?, ?, ?, ?)", id, hash(token), lang, accessCode, now());
+  return { user: { id, lang, access_code: accessCode }, token };
 }
 
 export function userByToken(token: string): User | undefined {
-  return one<User>("SELECT id, lang FROM users WHERE token_hash = ?", hash(token));
+  return one<User>("SELECT id, lang, access_code FROM users WHERE token_hash = ?", hash(token));
 }
 
 export function setLang(userId: string, lang: Lang): void {
@@ -346,10 +348,12 @@ export function usageToday(userId: string): Usage {
   return one<Usage>("SELECT audio_ms, composes, edits FROM usage WHERE user_id = ? AND day = ?", userId, today()) ?? { audio_ms: 0, composes: 0, edits: 0 };
 }
 
-/** Today's use by every device together. */
-export function usageTodayAll(): Usage {
+/** Today's use by every device that came in with this access code. */
+export function usageTodayByCode(code: string): Usage {
   const sum = one<Usage>(
-    "SELECT COALESCE(SUM(audio_ms), 0) AS audio_ms, COALESCE(SUM(composes), 0) AS composes, COALESCE(SUM(edits), 0) AS edits FROM usage WHERE day = ?",
+    `SELECT COALESCE(SUM(u.audio_ms), 0) AS audio_ms, COALESCE(SUM(u.composes), 0) AS composes, COALESCE(SUM(u.edits), 0) AS edits
+     FROM usage u JOIN users d ON d.id = u.user_id WHERE d.access_code = ? AND u.day = ?`,
+    code,
     today(),
   );
   return sum ?? { audio_ms: 0, composes: 0, edits: 0 };
